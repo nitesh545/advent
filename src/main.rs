@@ -4,6 +4,7 @@ use bevy::input::InputSystem;
 use bevy::input::mouse::{MouseButtonInput, MouseMotion};
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
+use bevy_rapier2d::parry::math::Rotation;
 use rand::Rng;
 use bevy_rapier2d::prelude::*;
 
@@ -57,6 +58,7 @@ fn main() {
         .add_systems(Update, custom_cursor)
         .add_systems(Update, move_enemies)
         .add_systems(Update, collision_bullet_enemy)
+        .add_systems(Update, collision_player_enemy)
         .run();
 }
 
@@ -81,8 +83,10 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
     commands.spawn((Sprite::from_image(asset_server.load("cursor.png")), Cursor, Transform::from_xyz(0.0,0.0,0.0).with_scale(Vec3::splat(0.1))));
     commands.spawn(Camera2d::default());
     commands.spawn((
-        Mesh2d(meshes.add(Circle::new(25.0))),
-        MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
+        // Mesh2d(meshes.add(Circle::new(25.0))),
+        Sprite::from_image(asset_server.load("tower.png")),
+        Transform::from_scale(Vec3::splat(0.4)),
+        // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player{
             speed: 200.0,
             acceleration: 500.0,
@@ -146,6 +150,22 @@ fn player_movement(
 
         // Apply movement
         transform.translation += player.velocity * time_step;
+
+        let mut position = match win.cursor_position() {
+            Some(k) => k,
+            None => return,
+        };
+
+        // rotation logic
+        // don't touch, ever.
+        let win_length = win.size().x;
+        let win_height = win.size().y;
+        let pos = Vec3::from((position.x - win_length/2.0, win_height/2.0 - position.y, 0.0));
+        let mut dir = pos - transform.translation;
+        dir = dir.normalize();
+        let angle = dir.y.atan2(dir.x);
+        transform.rotation = Quat::from_rotation_z(angle);
+        println!("angle: {}, direction: {}, rotation: {}", angle, dir, transform.rotation);
     }
 }
 
@@ -265,6 +285,24 @@ fn collision_bullet_enemy(
             if right_bound && left_bound && upper_bound && lower_bound {
                 commands.entity(entity_b).despawn_recursive();
                 commands.entity(entity_e).despawn_recursive();
+            }
+        }
+    }
+}
+
+fn collision_player_enemy(
+    mut q_enemy: Query<(&mut Transform, &mut Enemy), (With<Enemy>, Without<Player>)>,
+    mut q_player: Query<(&mut Transform, &mut Player), (With<Player>, Without<Enemy>)>,
+) {
+    for (mut transform_e, mut enemy) in q_enemy.iter_mut() {
+        for (mut transform_p, mut player) in q_player.iter_mut() {
+            let right_bound = transform_e.translation.x +25.0 >= transform_p.translation.x;
+            let left_bound = transform_e.translation.x - 25.0 <= transform_p.translation.x;
+            let upper_bound= transform_e.translation.y + 25.0 >= transform_p.translation.y;
+            let lower_bound= transform_e.translation.y - 25.0 <= transform_p.translation.y;
+            if right_bound && left_bound && upper_bound && lower_bound {
+                println!("Collision detected: player and enemy");
+                transform_p.translation = Vec3::ZERO;
             }
         }
     }
