@@ -18,6 +18,12 @@ struct Player {
 }
 
 #[derive(Component)]
+struct PlayerFireAnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component)]
 struct Rock {
     health: f32,
 }
@@ -44,11 +50,15 @@ struct EnemySapwnTimer(Timer);
 #[derive(Resource)]
 struct BulletFadeTimer(Timer);
 
+#[derive(Resource)]
+struct PlayerFireAnimationTimer(Timer);
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
         .insert_resource(BulletFadeTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
+        .insert_resource(PlayerFireAnimationTimer(Timer::from_seconds(0.1, TimerMode::Once)))
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_enemies)
         .add_systems(Update, debug_inputs)
@@ -60,6 +70,7 @@ fn main() {
         .add_systems(Update, move_enemies)
         .add_systems(Update, collision_bullet_enemy)
         .add_systems(Update, collision_player_enemy)
+        .add_systems(Update, play_player_fire_animation)
         .run();
 }
 
@@ -80,13 +91,32 @@ fn debug_inputs(
     }
 }
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<ColorMaterial>>, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture = asset_server.load("tower_fire.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(465, 264), 6, 1, None, None);
+    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let anim_indices = PlayerFireAnimationIndices{first: 1, last: 6};
+
     commands.spawn((Sprite::from_image(asset_server.load("cursor.png")), Cursor, Transform::from_xyz(0.0,0.0,0.0).with_scale(Vec3::splat(0.1))));
     commands.spawn(Camera2d::default());
     commands.spawn((
         // Mesh2d(meshes.add(Circle::new(25.0))),
-        Sprite::from_image(asset_server.load("tower.png")),
+        // Sprite::from_image(asset_server.load("tower.png")),
+        Sprite::from_atlas_image(
+            texture,
+            TextureAtlas {
+                layout: texture_atlas_layout,
+                index: anim_indices.first,
+            },
+        ),
         Transform::from_scale(Vec3::splat(0.4)),
+        anim_indices,
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player{
             speed: 200.0,
@@ -314,6 +344,21 @@ fn collision_player_enemy(
                 println!("Collision detected: player and enemy");
                 transform_p.translation = Vec3::ZERO;
             }
+        }
+    }
+}
+
+fn play_player_fire_animation(
+    time: Res<Time>,
+    mut timer: ResMut<PlayerFireAnimationTimer>,
+    mut q_player: Query<(&mut PlayerFireAnimationIndices, &mut Sprite), With<Player>>,
+    mouse_button: Res<ButtonInput<MouseButton>>,
+) {
+    if mouse_button.just_pressed(MouseButton::Left) {timer.0.reset();}
+    let (mut anim_indices, mut sprite) = q_player.single_mut();
+    if timer.0.tick(time.delta()).just_finished() {
+        if let Some(atlas) = &mut sprite.texture_atlas {
+            atlas.index = if atlas.index == anim_indices.last - 1 {anim_indices.first} else {atlas.index + 1};
         }
     }
 }
