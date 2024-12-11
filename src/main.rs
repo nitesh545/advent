@@ -52,7 +52,8 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_enemies)
         .add_systems(Update, debug_inputs)
-        .add_systems(Update, player_movement)
+        // .add_systems(Update, player_movement)
+        .add_systems(Update, player_rotate)
         .add_systems(Update, fire_bullet)
         .add_systems(Update, move_bullet)
         .add_systems(Update, custom_cursor)
@@ -110,16 +111,20 @@ fn player_movement(
 
         // Directional Input
         if keyboard_input.pressed(KeyCode::KeyW) && transform.translation.y < win.size().y/2.0 - 100.0 {
-            input_direction += *transform.up();
+            // input_direction += *transform.up();
+            input_direction += Vec3::Y;
         }
         if keyboard_input.pressed(KeyCode::KeyS) && transform.translation.y > win.size().y * -1.0/2.0 + 100.0 {
-            input_direction -= *transform.up();
+            // input_direction -= *transform.up();
+            input_direction -= Vec3::Y;
         }
         if keyboard_input.pressed(KeyCode::KeyA) && transform.translation.x > win.size().x * -1.0/2.0 + 100.0 {
-            input_direction -= *transform.right();
+            // input_direction -= *transform.right();
+            input_direction -= Vec3::X;
         }
         if keyboard_input.pressed(KeyCode::KeyD) && transform.translation.x < win.size().x/2.0 -100.0 {
-            input_direction += *transform.right();
+            // input_direction += *transform.right();
+            input_direction += Vec3::X;
         }
 
         // Normalize input direction
@@ -150,23 +155,28 @@ fn player_movement(
 
         // Apply movement
         transform.translation += player.velocity * time_step;
-
-        let mut position = match win.cursor_position() {
-            Some(k) => k,
-            None => return,
-        };
-
-        // rotation logic
-        // don't touch, ever.
-        let win_length = win.size().x;
-        let win_height = win.size().y;
-        let pos = Vec3::from((position.x - win_length/2.0, win_height/2.0 - position.y, 0.0));
-        let mut dir = pos - transform.translation;
-        dir = dir.normalize();
-        let angle = dir.y.atan2(dir.x);
-        transform.rotation = Quat::from_rotation_z(angle);
-        println!("angle: {}, direction: {}, rotation: {}", angle, dir, transform.rotation);
     }
+}
+
+fn player_rotate (
+    mut q_window: Query<&Window, With<PrimaryWindow>>,
+    mut q_player: Query<(&mut Transform), With<Player>>,
+) {
+    let win = q_window.single();
+    let mut transform = q_player.single_mut();
+    let mut position = match win.cursor_position() {
+        Some(k) => k,
+        None => return,
+    };
+    // rotation logic
+    // don't touch, ever.
+    let win_length = win.size().x;
+    let win_height = win.size().y;
+    let pos = Vec3::from((position.x - win_length/2.0, win_height/2.0 - position.y, 0.0));
+    let mut dir = pos - transform.translation;
+    dir = dir.normalize();
+    let angle = dir.y.atan2(dir.x);
+    transform.rotation = Quat::from_rotation_z(angle);
 }
 
 fn fire_bullet(
