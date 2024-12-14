@@ -18,12 +18,6 @@ struct Player {
 }
 
 #[derive(Component)]
-struct PlayerFireAnimationIndices {
-    first: usize,
-    last: usize,
-}
-
-#[derive(Component)]
 struct Rock {
     health: f32,
 }
@@ -44,6 +38,34 @@ struct Enemy{
     speed: f32,
 }
 
+#[derive(Component)]
+struct AnimationConfig {
+    first_sprite_index: usize,
+    last_sprite_index: usize,
+    fps: u8,
+    frame_timer: Timer,
+}
+
+impl AnimationConfig {
+    fn new(first: usize, last: usize, fps: u8, variant: String) -> Self {
+        Self {
+            first_sprite_index: first,
+            last_sprite_index: last,
+            fps,
+            frame_timer: Self::timer_from_fps(fps, variant),
+        }
+    }
+
+    fn timer_from_fps(fps: u8, variant: String) -> Timer {
+        if variant == "once" {
+            Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Once)
+        }
+        else {
+            Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Repeating)
+        }
+    }
+}
+
 #[derive(Resource)]
 struct EnemySapwnTimer(Timer);
 
@@ -58,19 +80,19 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
         .insert_resource(BulletFadeTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-        .insert_resource(PlayerFireAnimationTimer(Timer::from_seconds(0.1, TimerMode::Once)))
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_enemies)
         .add_systems(Update, debug_inputs)
         // .add_systems(Update, player_movement)
-        .add_systems(Update, player_rotate)
+        // .add_systems(Update, player_rotate)
         .add_systems(Update, fire_bullet)
         .add_systems(Update, move_bullet)
         .add_systems(Update, custom_cursor)
         .add_systems(Update, move_enemies)
         .add_systems(Update, collision_bullet_enemy)
         .add_systems(Update, collision_player_enemy)
-        .add_systems(Update, play_player_fire_animation)
+        .add_systems(Update, execute_animations_player)
+        .add_systems(Update, execute_animations_enemies)
         .run();
 }
 
@@ -98,25 +120,34 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let texture = asset_server.load("tower_fire.png");
-    let layout = TextureAtlasLayout::from_grid(UVec2::new(465, 264), 6, 1, None, None);
+    // let texture = asset_server.load("tower_fire.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(467, 264), 6, 1, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    let anim_indices = PlayerFireAnimationIndices{first: 1, last: 6};
+    let anim_config = AnimationConfig::new(1, 6, 15, String::from("once"));
 
     commands.spawn((Sprite::from_image(asset_server.load("cursor.png")), Cursor, Transform::from_xyz(0.0,0.0,0.0).with_scale(Vec3::splat(0.1))));
     commands.spawn(Camera2d::default());
     commands.spawn((
+        Text::new("Score: 0"),
+        Node {
+            position_type: PositionType::Relative,
+            top: Val::Px(12.0),
+            left: Val::Px(12.0),
+            ..default()
+        },
+    ));
+    commands.spawn((
         // Mesh2d(meshes.add(Circle::new(25.0))),
         // Sprite::from_image(asset_server.load("tower.png")),
-        Sprite::from_atlas_image(
-            texture,
-            TextureAtlas {
-                layout: texture_atlas_layout,
-                index: anim_indices.first,
-            },
-        ),
-        Transform::from_scale(Vec3::splat(0.4)),
-        anim_indices,
+        // Sprite::from_atlas_image(
+        //     texture,
+        //     TextureAtlas {
+        //         layout: texture_atlas_layout,
+        //         index: anim_config.first_sprite_index,
+        //     },
+        // ),
+        Sprite::from_image(asset_server.load("SpaceStation.png")),
+        Transform::from_scale(Vec3::splat(0.75)),
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player{
             speed: 200.0,
@@ -124,7 +155,8 @@ fn setup(
             max_speed: 400.0,
             velocity: Vec3::ZERO,
             friction: 5.0,
-        }
+        },
+        // anim_config,
         ));
 }
 
@@ -270,6 +302,7 @@ fn spawn_enemies(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
+    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     mut q_window: Query<&Window, With<PrimaryWindow>>,
     mut timer: ResMut<EnemySapwnTimer>,
     time: Res<Time>,
@@ -282,11 +315,25 @@ fn spawn_enemies(
         let enemy_direction = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
         let enemy_speed = rng.gen_range(50.0..200.0);
 
+        let texture = asset_server.load("fireball.png");
+        let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
+        let texture_atlas_layout = texture_atlas_layouts.add(layout);
+        let anim_config = AnimationConfig::new(1, 16, 15, String::from("Repeating"));
+
         commands.spawn((
-            Mesh2d(meshes.add(Circle::new(25.0))),
-            MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
-            Transform::from_xyz(rng.gen_range(-1.0*win_length/2.0..win_length/2.0), rng.gen_range(-1.0*win_height/2.0..win_height/2.0), 0.0),
+            // Mesh2d(meshes.add(Circle::new(25.0))),
+            // MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
+            Sprite::from_atlas_image(
+                texture,
+                TextureAtlas {
+                    layout: texture_atlas_layout,
+                    index: anim_config.first_sprite_index,
+                },
+            ),
+            Transform::from_xyz(rng.gen_range(-1.0*win_length/2.0..win_length/2.0), rng.gen_range(-1.0*win_height/2.0..win_height/2.0), 0.0)
+                .with_scale(Vec3::splat(0.5)),
             Enemy{health: 100.0, direction: enemy_direction, speed: enemy_speed},
+            anim_config,
         ));
     }
 }
@@ -308,6 +355,11 @@ fn move_enemies(
         let enemy_direction = enemy.direction;
         let enemy_speed = enemy.speed;
         transform.translation += enemy_direction * enemy_speed * time_step;
+
+        // rotation logic
+        let dir = enemy_direction.normalize();
+        let angle = dir.y.atan2(dir.x);
+        transform.rotation = Quat::from_rotation_z(angle);
     }
 }
 
@@ -341,24 +393,51 @@ fn collision_player_enemy(
             let upper_bound= transform_e.translation.y + 25.0 >= transform_p.translation.y;
             let lower_bound= transform_e.translation.y - 25.0 <= transform_p.translation.y;
             if right_bound && left_bound && upper_bound && lower_bound {
-                println!("Collision detected: player and enemy");
                 transform_p.translation = Vec3::ZERO;
             }
         }
     }
 }
 
-fn play_player_fire_animation(
+fn execute_animations_player(time: Res<Time>, mut query: Query<(&mut AnimationConfig, &mut Sprite), With<Player>>, mouse_input: Res<ButtonInput<MouseButton>>) {
+    for (mut config, mut sprite) in &mut query {
+        if mouse_input.just_pressed(MouseButton::Left) {config.frame_timer.reset();}
+        // we track how long the current sprite has been displayed for
+        config.frame_timer.tick(time.delta());
+
+        // If it has been displayed for the user-defined amount of time (fps)...
+        if config.frame_timer.just_finished() {
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                if atlas.index == config.last_sprite_index - 1 {
+                    // ...and it IS the last frame, then we move back to the first frame and stop.
+                    atlas.index = config.first_sprite_index;
+                } else {
+                    // ...and it is NOT the last frame, then we move to the next frame...
+                    atlas.index += 1;
+                    // ...and reset the frame timer to start counting all over again
+                    config.frame_timer = AnimationConfig::timer_from_fps(config.fps, String::from("once"));
+                }
+            }
+        }
+    }
+}
+
+fn execute_animations_enemies(
     time: Res<Time>,
-    mut timer: ResMut<PlayerFireAnimationTimer>,
-    mut q_player: Query<(&mut PlayerFireAnimationIndices, &mut Sprite), With<Player>>,
-    mouse_button: Res<ButtonInput<MouseButton>>,
+    mut q_enemy: Query<(&mut AnimationConfig, &mut Sprite), With<Enemy>>,
 ) {
-    if mouse_button.just_pressed(MouseButton::Left) {timer.0.reset();}
-    let (mut anim_indices, mut sprite) = q_player.single_mut();
-    if timer.0.tick(time.delta()).just_finished() {
-        if let Some(atlas) = &mut sprite.texture_atlas {
-            atlas.index = if atlas.index == anim_indices.last - 1 {anim_indices.first} else {atlas.index + 1};
+    for (mut config, mut sprite) in q_enemy.iter_mut() {
+        config.frame_timer.tick(time.delta());
+        if config.frame_timer.just_finished() {
+            if let Some(atlas) = &mut sprite.texture_atlas {
+                if atlas.index == config.last_sprite_index - 1 {
+                    atlas.index = config.first_sprite_index;
+                }
+                else {
+                    atlas.index += 1;
+                    config.frame_timer = AnimationConfig::timer_from_fps(config.fps, String::from("Repeating"));
+                }
+            }
         }
     }
 }
