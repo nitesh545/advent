@@ -1,12 +1,13 @@
-use std::time::Duration;
 use bevy::ecs::bundle::DynamicBundle;
 use bevy::input::InputSystem;
 use bevy::input::mouse::{MouseButtonInput, MouseMotion};
 use bevy::prelude::*;
+use bevy::render::camera::RenderTarget::Image;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 use bevy_rapier2d::parry::math::Rotation;
-use rand::Rng;
 use bevy_rapier2d::prelude::*;
+use rand::Rng;
+use std::time::Duration;
 
 #[derive(Component)]
 struct Player {
@@ -15,6 +16,7 @@ struct Player {
     max_speed: f32,
     velocity: Vec3,
     friction: f32,
+    fire_delay: Timer,
 }
 
 #[derive(Component)]
@@ -26,13 +28,13 @@ struct Rock {
 struct Cursor;
 
 #[derive(Component)]
-struct Bullet{
+struct Bullet {
     speed: f32,
     direction: Vec3,
 }
 
 #[derive(Component)]
-struct Enemy{
+struct Enemy {
     health: f32,
     direction: Vec3,
     speed: f32,
@@ -59,9 +61,11 @@ impl AnimationConfig {
     fn timer_from_fps(fps: u8, variant: String) -> Timer {
         if variant == "once" {
             Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Once)
-        }
-        else {
-            Timer::new(Duration::from_secs_f32(1.0 / (fps as f32)), TimerMode::Repeating)
+        } else {
+            Timer::new(
+                Duration::from_secs_f32(1.0 / (fps as f32)),
+                TimerMode::Repeating,
+            )
         }
     }
 }
@@ -77,14 +81,20 @@ struct PlayerFireAnimationTimer(Timer);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
-        .insert_resource(EnemySapwnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
-        .insert_resource(BulletFadeTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
+        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .insert_resource(EnemySapwnTimer(Timer::from_seconds(
+            2.0,
+            TimerMode::Repeating,
+        )))
+        .insert_resource(BulletFadeTimer(Timer::from_seconds(
+            1.0,
+            TimerMode::Repeating,
+        )))
         .add_systems(Startup, setup)
         .add_systems(Update, spawn_enemies)
         .add_systems(Update, debug_inputs)
         // .add_systems(Update, player_movement)
-        // .add_systems(Update, player_rotate)
+        .add_systems(Update, player_rotate)
         .add_systems(Update, fire_bullet)
         .add_systems(Update, move_bullet)
         .add_systems(Update, custom_cursor)
@@ -120,44 +130,43 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    // let texture = asset_server.load("tower_fire.png");
-    let layout = TextureAtlasLayout::from_grid(UVec2::new(467, 264), 6, 1, None, None);
+    let texture = asset_server.load("spaceturret.png");
+    let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    let anim_config = AnimationConfig::new(1, 6, 15, String::from("once"));
+    let anim_config = AnimationConfig::new(0, 16, 25, String::from("once"));
 
-    commands.spawn((Sprite::from_image(asset_server.load("cursor.png")), Cursor, Transform::from_xyz(0.0,0.0,0.0).with_scale(Vec3::splat(0.1))));
-    commands.spawn(Camera2d::default());
     commands.spawn((
-        Text::new("Score: 0"),
-        Node {
-            position_type: PositionType::Relative,
-            top: Val::Px(12.0),
-            left: Val::Px(12.0),
-            ..default()
-        },
+        Sprite::from_image(asset_server.load("cursor.png")),
+        Cursor,
+        Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(0.1)),
     ));
+    commands.spawn(Camera2d::default());
+    commands.spawn((Text::new("Score: 0"), Node {
+        position_type: PositionType::Relative,
+        top: Val::Px(12.0),
+        left: Val::Px(12.0),
+        ..default()
+    }));
     commands.spawn((
         // Mesh2d(meshes.add(Circle::new(25.0))),
         // Sprite::from_image(asset_server.load("tower.png")),
-        // Sprite::from_atlas_image(
-        //     texture,
-        //     TextureAtlas {
-        //         layout: texture_atlas_layout,
-        //         index: anim_config.first_sprite_index,
-        //     },
-        // ),
-        Sprite::from_image(asset_server.load("SpaceStation.png")),
-        Transform::from_scale(Vec3::splat(0.75)),
+        Sprite::from_atlas_image(texture, TextureAtlas {
+            layout: texture_atlas_layout,
+            index: anim_config.first_sprite_index,
+        }),
+        // Sprite::from_image(asset_server.load("tower2.png")),
+        Transform::from_scale(Vec3::splat(1.0)),
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
-        Player{
+        Player {
             speed: 200.0,
             acceleration: 500.0,
             max_speed: 400.0,
             velocity: Vec3::ZERO,
             friction: 5.0,
+            fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
         },
-        // anim_config,
-        ));
+        anim_config,
+    ));
 }
 
 fn player_movement(
@@ -172,19 +181,27 @@ fn player_movement(
         let mut input_direction = Vec3::ZERO;
 
         // Directional Input
-        if keyboard_input.pressed(KeyCode::KeyW) && transform.translation.y < win.size().y/2.0 - 100.0 {
+        if keyboard_input.pressed(KeyCode::KeyW)
+            && transform.translation.y < win.size().y / 2.0 - 100.0
+        {
             // input_direction += *transform.up();
             input_direction += Vec3::Y;
         }
-        if keyboard_input.pressed(KeyCode::KeyS) && transform.translation.y > win.size().y * -1.0/2.0 + 100.0 {
+        if keyboard_input.pressed(KeyCode::KeyS)
+            && transform.translation.y > win.size().y * -1.0 / 2.0 + 100.0
+        {
             // input_direction -= *transform.up();
             input_direction -= Vec3::Y;
         }
-        if keyboard_input.pressed(KeyCode::KeyA) && transform.translation.x > win.size().x * -1.0/2.0 + 100.0 {
+        if keyboard_input.pressed(KeyCode::KeyA)
+            && transform.translation.x > win.size().x * -1.0 / 2.0 + 100.0
+        {
             // input_direction -= *transform.right();
             input_direction -= Vec3::X;
         }
-        if keyboard_input.pressed(KeyCode::KeyD) && transform.translation.x < win.size().x/2.0 -100.0 {
+        if keyboard_input.pressed(KeyCode::KeyD)
+            && transform.translation.x < win.size().x / 2.0 - 100.0
+        {
             // input_direction += *transform.right();
             input_direction += Vec3::X;
         }
@@ -210,7 +227,7 @@ fn player_movement(
             player.velocity -= ve * fr * time_step;
 
             // Stop if velocity is very small
-            if ve.length() < 0.01{
+            if ve.length() < 0.01 {
                 player.velocity = Vec3::ZERO;
             }
         }
@@ -220,7 +237,7 @@ fn player_movement(
     }
 }
 
-fn player_rotate (
+fn player_rotate(
     mut q_window: Query<&Window, With<PrimaryWindow>>,
     mut q_player: Query<(&mut Transform), With<Player>>,
 ) {
@@ -234,7 +251,11 @@ fn player_rotate (
     // don't touch, ever.
     let win_length = win.size().x;
     let win_height = win.size().y;
-    let pos = Vec3::from((position.x - win_length/2.0, win_height/2.0 - position.y, 0.0));
+    let pos = Vec3::from((
+        position.x - win_length / 2.0,
+        win_height / 2.0 - position.y,
+        0.0,
+    ));
     let mut dir = pos - transform.translation;
     dir = dir.normalize();
     let angle = dir.y.atan2(dir.x);
@@ -248,32 +269,39 @@ fn fire_bullet(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut query: Query<&mut Transform, With<Player>>,
+    mut q_player: Query<&mut Player, With<Player>>,
     mut q_windows: Query<&Window, With<PrimaryWindow>>,
+    time: Res<Time>,
 ) {
+    let mut player = q_player.single_mut();
     if keyboard_input.just_pressed(KeyCode::Space) || mouse_input.just_pressed(MouseButton::Left) {
-        let win =  q_windows.single();
+        let win = q_windows.single();
         let mut position = win.cursor_position().unwrap();
         let win_length = win.size().x;
         let win_height = win.size().y;
         for mut transform in query.iter_mut() {
-            let pos = Vec3::from((position.x - win_length/2.0, win_height/2.0 - position.y, 0.0));
+            let pos = Vec3::from((
+                position.x - win_length / 2.0,
+                win_height / 2.0 - position.y,
+                0.0,
+            ));
             let mut dir = pos - transform.translation;
-            let bullet = commands.spawn(
-                (
+            let bullet = commands
+                .spawn((
                     Mesh2d(meshes.add(Circle::new(2.5))),
-                    MeshMaterial2d(materials.add(Color::srgb(0.0, 1.0, 0.0))),
+                    MeshMaterial2d(materials.add(Color::srgb(0.72, 0.96, 0.97))),
                     Transform::from_translation(transform.translation),
-                    Bullet{speed: 800.0, direction: dir},
-                )
-            ).id();
+                    Bullet {
+                        speed: 800.0,
+                        direction: dir,
+                    },
+                ))
+                .id();
         }
     }
 }
 
-fn move_bullet(
-    mut query: Query<(&mut Transform, &mut Bullet), With<Bullet>>,
-    time: Res<Time>,
-) {
+fn move_bullet(mut query: Query<(&mut Transform, &mut Bullet), With<Bullet>>, time: Res<Time>) {
     let time_step = time.delta_secs();
     for (mut transform, mut bullet) in query.iter_mut() {
         transform.translation += bullet.speed * time_step * bullet.direction.normalize();
@@ -293,8 +321,8 @@ fn custom_cursor(
     let win_length = win.size().x;
     let win_height = win.size().y;
     let mut cursor_transform = q_cursor.single_mut();
-    cursor_transform.translation.x = cursor_position.x - win_length/2.0;
-    cursor_transform.translation.y = win_height/2.0 - cursor_position.y;
+    cursor_transform.translation.x = cursor_position.x - win_length / 2.0;
+    cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
 }
 
 fn spawn_enemies(
@@ -307,12 +335,13 @@ fn spawn_enemies(
     mut timer: ResMut<EnemySapwnTimer>,
     time: Res<Time>,
 ) {
-    if timer.0.tick(time.delta()).just_finished(){
+    if timer.0.tick(time.delta()).just_finished() {
         let mut rng = rand::thread_rng();
         let win = q_window.single();
         let win_length = win.size().x;
         let win_height = win.size().y;
-        let enemy_direction = Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
+        let enemy_direction =
+            Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
         let enemy_speed = rng.gen_range(50.0..200.0);
 
         let texture = asset_server.load("fireball.png");
@@ -323,16 +352,21 @@ fn spawn_enemies(
         commands.spawn((
             // Mesh2d(meshes.add(Circle::new(25.0))),
             // MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
-            Sprite::from_atlas_image(
-                texture,
-                TextureAtlas {
-                    layout: texture_atlas_layout,
-                    index: anim_config.first_sprite_index,
-                },
-            ),
-            Transform::from_xyz(rng.gen_range(-1.0*win_length/2.0..win_length/2.0), rng.gen_range(-1.0*win_height/2.0..win_height/2.0), 0.0)
-                .with_scale(Vec3::splat(0.5)),
-            Enemy{health: 100.0, direction: enemy_direction, speed: enemy_speed},
+            Sprite::from_atlas_image(texture, TextureAtlas {
+                layout: texture_atlas_layout,
+                index: anim_config.first_sprite_index,
+            }),
+            Transform::from_xyz(
+                rng.gen_range(-1.0 * win_length / 2.0..win_length / 2.0),
+                rng.gen_range(-1.0 * win_height / 2.0..win_height / 2.0),
+                0.0,
+            )
+            .with_scale(Vec3::splat(0.5)),
+            Enemy {
+                health: 100.0,
+                direction: enemy_direction,
+                speed: enemy_speed,
+            },
             anim_config,
         ));
     }
@@ -346,10 +380,14 @@ fn move_enemies(
     let win = q_window.single();
     let time_step = time.delta_secs();
     for (mut transform, mut enemy) in query.iter_mut() {
-        if transform.translation.x >= win.size().x/2.0 - 25.0 || transform.translation.x <= win.size().x * -1.0/2.0 + 25.0 {
+        if transform.translation.x >= win.size().x / 2.0 - 25.0
+            || transform.translation.x <= win.size().x * -1.0 / 2.0 + 25.0
+        {
             enemy.direction.x *= -1.0;
         }
-        if transform.translation.y >= win.size().y/2.0 - 25.0 || transform.translation.y <= win.size().y * -1.0/2.0 + 25.0 {
+        if transform.translation.y >= win.size().y / 2.0 - 25.0
+            || transform.translation.y <= win.size().y * -1.0 / 2.0 + 25.0
+        {
             enemy.direction.y *= -1.0;
         }
         let enemy_direction = enemy.direction;
@@ -370,10 +408,10 @@ fn collision_bullet_enemy(
 ) {
     for (mut transform_e, mut enemy, entity_e) in q_enemy.iter_mut() {
         for (mut transform_b, mut bullet, entity_b) in q_bullet.iter_mut() {
-            let right_bound = transform_e.translation.x +25.0 >= transform_b.translation.x;
+            let right_bound = transform_e.translation.x + 25.0 >= transform_b.translation.x;
             let left_bound = transform_e.translation.x - 25.0 <= transform_b.translation.x;
-            let upper_bound= transform_e.translation.y + 25.0 >= transform_b.translation.y;
-            let lower_bound= transform_e.translation.y - 25.0 <= transform_b.translation.y;
+            let upper_bound = transform_e.translation.y + 25.0 >= transform_b.translation.y;
+            let lower_bound = transform_e.translation.y - 25.0 <= transform_b.translation.y;
             if right_bound && left_bound && upper_bound && lower_bound {
                 commands.entity(entity_b).despawn_recursive();
                 commands.entity(entity_e).despawn_recursive();
@@ -388,10 +426,10 @@ fn collision_player_enemy(
 ) {
     for (mut transform_e, mut enemy) in q_enemy.iter_mut() {
         for (mut transform_p, mut player) in q_player.iter_mut() {
-            let right_bound = transform_e.translation.x +25.0 >= transform_p.translation.x;
+            let right_bound = transform_e.translation.x + 25.0 >= transform_p.translation.x;
             let left_bound = transform_e.translation.x - 25.0 <= transform_p.translation.x;
-            let upper_bound= transform_e.translation.y + 25.0 >= transform_p.translation.y;
-            let lower_bound= transform_e.translation.y - 25.0 <= transform_p.translation.y;
+            let upper_bound = transform_e.translation.y + 25.0 >= transform_p.translation.y;
+            let lower_bound = transform_e.translation.y - 25.0 <= transform_p.translation.y;
             if right_bound && left_bound && upper_bound && lower_bound {
                 transform_p.translation = Vec3::ZERO;
             }
@@ -399,9 +437,15 @@ fn collision_player_enemy(
     }
 }
 
-fn execute_animations_player(time: Res<Time>, mut query: Query<(&mut AnimationConfig, &mut Sprite), With<Player>>, mouse_input: Res<ButtonInput<MouseButton>>) {
+fn execute_animations_player(
+    time: Res<Time>,
+    mut query: Query<(&mut AnimationConfig, &mut Sprite), With<Player>>,
+    mouse_input: Res<ButtonInput<MouseButton>>,
+) {
     for (mut config, mut sprite) in &mut query {
-        if mouse_input.just_pressed(MouseButton::Left) {config.frame_timer.reset();}
+        if mouse_input.just_pressed(MouseButton::Left) {
+            config.frame_timer.reset();
+        }
         // we track how long the current sprite has been displayed for
         config.frame_timer.tick(time.delta());
 
@@ -415,7 +459,8 @@ fn execute_animations_player(time: Res<Time>, mut query: Query<(&mut AnimationCo
                     // ...and it is NOT the last frame, then we move to the next frame...
                     atlas.index += 1;
                     // ...and reset the frame timer to start counting all over again
-                    config.frame_timer = AnimationConfig::timer_from_fps(config.fps, String::from("once"));
+                    config.frame_timer =
+                        AnimationConfig::timer_from_fps(config.fps, String::from("once"));
                 }
             }
         }
@@ -432,10 +477,10 @@ fn execute_animations_enemies(
             if let Some(atlas) = &mut sprite.texture_atlas {
                 if atlas.index == config.last_sprite_index - 1 {
                     atlas.index = config.first_sprite_index;
-                }
-                else {
+                } else {
                     atlas.index += 1;
-                    config.frame_timer = AnimationConfig::timer_from_fps(config.fps, String::from("Repeating"));
+                    config.frame_timer =
+                        AnimationConfig::timer_from_fps(config.fps, String::from("Repeating"));
                 }
             }
         }
