@@ -20,6 +20,11 @@ struct Player {
 }
 
 #[derive(Component)]
+struct Score {
+    score: u32,
+}
+
+#[derive(Component)]
 struct Rock {
     health: f32,
 }
@@ -103,6 +108,7 @@ fn main() {
         .add_systems(Update, collision_player_enemy)
         .add_systems(Update, execute_animations_player)
         .add_systems(Update, execute_animations_enemies)
+        .add_systems(Update, update_score_text)
         .run();
 }
 
@@ -134,6 +140,7 @@ fn setup(
     let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
     let anim_config = AnimationConfig::new(0, 16, 25, String::from("once"));
+    let mut score = Score {score: 0};
 
     commands.spawn((
         Sprite::from_image(asset_server.load("cursor.png")),
@@ -141,12 +148,22 @@ fn setup(
         Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(0.1)),
     ));
     commands.spawn(Camera2d::default());
-    commands.spawn((Text::new("Score: 0"), Node {
-        position_type: PositionType::Relative,
-        top: Val::Px(12.0),
-        left: Val::Px(12.0),
-        ..default()
-    }));
+    commands.spawn(
+        (
+            Text::new(format!("Score: {}", score.score)),
+            TextFont {
+                font_size: 45.0,
+                ..default()
+            },
+            score,
+            Node {
+                position_type: PositionType::Relative,
+                top: Val::Px(12.0),
+                left: Val::Px(12.0),
+                ..default()
+            },
+        )
+    );
     commands.spawn((
         // Mesh2d(meshes.add(Circle::new(25.0))),
         // Sprite::from_image(asset_server.load("tower.png")),
@@ -405,7 +422,9 @@ fn collision_bullet_enemy(
     mut q_enemy: Query<(&mut Transform, &mut Enemy, Entity), (With<Enemy>, Without<Bullet>)>,
     mut q_bullet: Query<(&mut Transform, &mut Bullet, Entity), (With<Bullet>, Without<Enemy>)>,
     mut commands: Commands,
+    mut q_score: Query<&mut Score>,
 ) {
+    let mut score = q_score.single_mut();
     for (mut transform_e, mut enemy, entity_e) in q_enemy.iter_mut() {
         for (mut transform_b, mut bullet, entity_b) in q_bullet.iter_mut() {
             let right_bound = transform_e.translation.x + 25.0 >= transform_b.translation.x;
@@ -413,6 +432,7 @@ fn collision_bullet_enemy(
             let upper_bound = transform_e.translation.y + 25.0 >= transform_b.translation.y;
             let lower_bound = transform_e.translation.y - 25.0 <= transform_b.translation.y;
             if right_bound && left_bound && upper_bound && lower_bound {
+                score.score += 1;
                 commands.entity(entity_b).despawn_recursive();
                 commands.entity(entity_e).despawn_recursive();
             }
@@ -485,4 +505,18 @@ fn execute_animations_enemies(
             }
         }
     }
+}
+
+fn update_score_text(
+    mut q_text: Query<(&mut Text, &mut Score), With<Node>>,
+) {
+    let (mut text, mut score) = q_text.single_mut();
+    text.0 = format!("Score: {}", score.score);
+}
+
+fn show_score(
+    mut q_score: Query<&mut Score>,
+) {
+    let mut score = q_score.single();
+    println!("{}", score.score);
 }
