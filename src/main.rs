@@ -86,7 +86,8 @@ struct PlayerFireAnimationTimer(Timer);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        // .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(DefaultPlugins)
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
             2.0,
             TimerMode::Repeating,
@@ -142,6 +143,13 @@ fn setup(
     let anim_config = AnimationConfig::new(0, 16, 25, String::from("once"));
     let mut score = Score {score: 0};
 
+    commands.spawn(
+        (
+            Sprite::from_image(asset_server.load("SpaceBackground1.png")),
+            Transform::from_xyz(0.0, 0.0, -5.0).with_scale(Vec3::splat(0.7)),
+        )
+    );
+
     commands.spawn((
         Sprite::from_image(asset_server.load("cursor.png")),
         Cursor,
@@ -164,6 +172,7 @@ fn setup(
             },
         )
     );
+
     commands.spawn((
         // Mesh2d(meshes.add(Circle::new(25.0))),
         // Sprite::from_image(asset_server.load("tower.png")),
@@ -172,7 +181,7 @@ fn setup(
             index: anim_config.first_sprite_index,
         }),
         // Sprite::from_image(asset_server.load("tower2.png")),
-        Transform::from_scale(Vec3::splat(1.0)),
+        Transform::from_scale(Vec3::splat(0.5)),
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player {
             speed: 200.0,
@@ -374,11 +383,11 @@ fn spawn_enemies(
                 index: anim_config.first_sprite_index,
             }),
             Transform::from_xyz(
-                rng.gen_range(-1.0 * win_length / 2.0..win_length / 2.0),
-                rng.gen_range(-1.0 * win_height / 2.0..win_height / 2.0),
+                rng.gen_range(-1.0 * win_length / 2.0 + 50.0 ..win_length / 2.0 - 50.0),
+                rng.gen_range(-1.0 * win_height / 2.0 + 50.0 ..win_height / 2.0 - 50.0),
                 0.0,
             )
-            .with_scale(Vec3::splat(0.5)),
+            .with_scale(Vec3::splat(0.25)),
             Enemy {
                 health: 100.0,
                 direction: enemy_direction,
