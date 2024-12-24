@@ -140,7 +140,7 @@ fn setup(
     let texture = asset_server.load("spaceturret.png");
     let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    let anim_config = AnimationConfig::new(0, 16, 25, String::from("once"));
+    let anim_config = AnimationConfig::new(0, 16, 60, String::from("once"));
     let mut score = Score {score: 0};
 
     commands.spawn(
