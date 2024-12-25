@@ -8,6 +8,7 @@ use bevy_rapier2d::parry::math::Rotation;
 use bevy_rapier2d::prelude::*;
 use rand::{thread_rng, Rng};
 use std::time::Duration;
+use bevy::ecs::observer::TriggerTargets;
 
 #[derive(Component)]
 struct Player {
@@ -351,6 +352,7 @@ fn custom_cursor(
     let mut cursor_transform = q_cursor.single_mut();
     cursor_transform.translation.x = cursor_position.x - win_length / 2.0;
     cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
+    cursor_transform.translation.z = 10.0;
 }
 
 fn spawn_enemies(
@@ -372,6 +374,7 @@ fn spawn_enemies(
             Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
         let enemy_speed = rng.gen_range(50.0..200.0);
         let rot = rng.gen_range(-4.0..4.0);
+        let scale = Vec3::splat(rng.gen_range(0.25..0.45));
 
         // let texture = asset_server.load("fireball.png");
         // let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
@@ -391,7 +394,7 @@ fn spawn_enemies(
                 rng.gen_range(-1.0 * win_height / 2.0 + 50.0 ..win_height / 2.0 - 50.0),
                 0.0,
             )
-            .with_scale(Vec3::splat(rng.gen_range(0.25..0.45))),
+            .with_scale(scale),
             Enemy {
                 health: 100.0,
                 direction: enemy_direction,
@@ -428,7 +431,7 @@ fn move_enemies(
         // rotation logic
         // let dir = enemy_direction.normalize();
         // let angle = dir.y.atan2(dir.x);
-        // transform.rotation = Quat::from_rotation_z(angle);
+        // flames_transform.rotation = Quat::from_rotation_z(angle);
     }
 }
 
