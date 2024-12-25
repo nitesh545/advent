@@ -6,7 +6,7 @@ use bevy::render::camera::RenderTarget::Image;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 use bevy_rapier2d::parry::math::Rotation;
 use bevy_rapier2d::prelude::*;
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use std::time::Duration;
 
 #[derive(Component)]
@@ -43,6 +43,7 @@ struct Enemy {
     health: f32,
     direction: Vec3,
     speed: f32,
+    enemy_rotation: f32,
 }
 
 #[derive(Component)]
@@ -89,8 +90,8 @@ fn main() {
         // .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins(DefaultPlugins)
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
-            2.0,
-            TimerMode::Repeating,
+        2.0,
+        TimerMode::Repeating,
         )))
         .insert_resource(BulletFadeTimer(Timer::from_seconds(
             1.0,
@@ -105,10 +106,11 @@ fn main() {
         .add_systems(Update, move_bullet)
         .add_systems(Update, custom_cursor)
         .add_systems(Update, move_enemies)
+        .add_systems(Update, rotate_enemies)
         .add_systems(Update, collision_bullet_enemy)
         .add_systems(Update, collision_player_enemy)
         .add_systems(Update, execute_animations_player)
-        .add_systems(Update, execute_animations_enemies)
+        // .add_systems(Update, execute_animations_enemies)
         .add_systems(Update, update_score_text)
         .run();
 }
@@ -369,31 +371,34 @@ fn spawn_enemies(
         let enemy_direction =
             Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
         let enemy_speed = rng.gen_range(50.0..200.0);
+        let rot = rng.gen_range(-4.0..4.0);
 
-        let texture = asset_server.load("fireball.png");
-        let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
-        let texture_atlas_layout = texture_atlas_layouts.add(layout);
-        let anim_config = AnimationConfig::new(1, 16, 15, String::from("Repeating"));
+        // let texture = asset_server.load("fireball.png");
+        // let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
+        // let texture_atlas_layout = texture_atlas_layouts.add(layout);
+        // let anim_config = AnimationConfig::new(1, 16, 15, String::from("Repeating"));
 
         commands.spawn((
             // Mesh2d(meshes.add(Circle::new(25.0))),
             // MeshMaterial2d(materials.add(Color::srgb(1.0, 1.0, 0.0))),
-            Sprite::from_atlas_image(texture, TextureAtlas {
-                layout: texture_atlas_layout,
-                index: anim_config.first_sprite_index,
-            }),
+            // Sprite::from_atlas_image(texture, TextureAtlas {
+            //     layout: texture_atlas_layout,
+            //     index: anim_config.first_sprite_index,
+            // }),
+            Sprite::from_image(asset_server.load("rock.png")),
             Transform::from_xyz(
                 rng.gen_range(-1.0 * win_length / 2.0 + 50.0 ..win_length / 2.0 - 50.0),
                 rng.gen_range(-1.0 * win_height / 2.0 + 50.0 ..win_height / 2.0 - 50.0),
                 0.0,
             )
-            .with_scale(Vec3::splat(0.25)),
+            .with_scale(Vec3::splat(rng.gen_range(0.25..0.45))),
             Enemy {
                 health: 100.0,
                 direction: enemy_direction,
                 speed: enemy_speed,
+                enemy_rotation: rot,
             },
-            anim_config,
+            // anim_config,
         ));
     }
 }
@@ -421,9 +426,18 @@ fn move_enemies(
         transform.translation += enemy_direction * enemy_speed * time_step;
 
         // rotation logic
-        let dir = enemy_direction.normalize();
-        let angle = dir.y.atan2(dir.x);
-        transform.rotation = Quat::from_rotation_z(angle);
+        // let dir = enemy_direction.normalize();
+        // let angle = dir.y.atan2(dir.x);
+        // transform.rotation = Quat::from_rotation_z(angle);
+    }
+}
+
+fn rotate_enemies(
+    mut q_enemies: Query<(&mut Transform, &Enemy), With<Enemy>>,
+    timer: Res<Time>,
+) {
+    for (mut transform, enemy) in q_enemies.iter_mut() {
+        transform.rotate_z(enemy.enemy_rotation * timer.delta_secs());
     }
 }
 
