@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+avian2d = "0.2.0"
 bevy = { version = "0.15.0", features = [
     "dynamic_linking",
 ] }
