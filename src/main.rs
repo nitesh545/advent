@@ -1,14 +1,8 @@
-use bevy::ecs::bundle::DynamicBundle;
-use bevy::input::InputSystem;
-use bevy::input::mouse::{MouseButtonInput, MouseMotion};
 use bevy::prelude::*;
-use bevy::render::camera::RenderTarget::Image;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
-use bevy_rapier2d::parry::math::Rotation;
-use bevy_rapier2d::prelude::*;
 use rand::{thread_rng, Rng};
 use std::time::Duration;
-use bevy::ecs::observer::TriggerTargets;
+use avian2d::prelude::*;
 
 #[derive(Component)]
 struct Player {
@@ -89,7 +83,7 @@ struct PlayerFireAnimationTimer(Timer);
 fn main() {
     App::new()
         // .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins(DefaultPlugins)
+        .add_plugins((DefaultPlugins, PhysicsPlugins::default(), PhysicsDebugPlugin::default()))
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
         2.0,
         TimerMode::Repeating,
@@ -185,6 +179,9 @@ fn setup(
         }),
         // Sprite::from_image(asset_server.load("tower2.png")),
         Transform::from_scale(Vec3::splat(0.5)),
+        RigidBody::Kinematic,
+        Collider::circle(100.0),
+        Sensor,
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player {
             speed: 200.0,
@@ -324,6 +321,10 @@ fn fire_bullet(
                         speed: 800.0,
                         direction: dir,
                     },
+                    RigidBody::Kinematic,
+                    Collider::circle(5.0),
+                    TransformInterpolation,
+                    Sensor,
                 ))
                 .id();
         }
@@ -401,6 +402,10 @@ fn spawn_enemies(
                 speed: enemy_speed,
                 enemy_rotation: rot,
             },
+            RigidBody::Kinematic,
+            Collider::circle(100.0),
+            TransformInterpolation,
+            Sensor,
             // anim_config,
         ));
     }
