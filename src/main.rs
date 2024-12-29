@@ -3,6 +3,7 @@ use bevy::window::{CursorGrabMode, PrimaryWindow};
 use rand::{thread_rng, Rng};
 use std::time::Duration;
 use avian2d::prelude::*;
+use bevy::ecs::observer::TriggerTargets;
 
 #[derive(Component)]
 struct Player {
@@ -102,11 +103,13 @@ fn main() {
         .add_systems(Update, custom_cursor)
         .add_systems(Update, move_enemies)
         .add_systems(Update, rotate_enemies)
-        .add_systems(Update, collision_bullet_enemy)
-        .add_systems(Update, collision_player_enemy)
+        // .add_systems(Update, collision_bullet_enemy)
+        // .add_systems(Update, collision_player_enemy)
         .add_systems(Update, execute_animations_player)
         // .add_systems(Update, execute_animations_enemies)
         .add_systems(Update, update_score_text)
+        .add_systems(Update, colliding_entities)
+        .add_systems(Update, collision_reader)
         .run();
 }
 
@@ -182,6 +185,7 @@ fn setup(
         RigidBody::Kinematic,
         Collider::circle(100.0),
         Sensor,
+        CollidingEntities::default(),
         // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
         Player {
             speed: 200.0,
@@ -325,6 +329,7 @@ fn fire_bullet(
                     Collider::circle(5.0),
                     TransformInterpolation,
                     Sensor,
+                    CollidingEntities::default(),
                 ))
                 .id();
         }
@@ -406,6 +411,7 @@ fn spawn_enemies(
             Collider::circle(100.0),
             TransformInterpolation,
             Sensor,
+            CollidingEntities::default(),
             // anim_config,
         ));
     }
@@ -550,4 +556,28 @@ fn show_score(
 ) {
     let mut score = q_score.single();
     println!("{}", score.score);
+}
+
+fn colliding_entities(
+    query: Query<(Entity, &CollidingEntities)>,
+) {
+    for (entity, colliding_entities) in &query {
+        if colliding_entities.len() > 0 {
+            println!("{:?}", colliding_entities);
+        }
+    }
+}
+
+fn collision_reader(
+    mut collision_event_reader: EventReader<Collision>,
+    q_player: Query<Entity, With<Player>>,
+    mut commands: Commands,
+) {
+    let player = q_player.single();
+    for Collision(contacts) in collision_event_reader.read() {
+        println!("Following entities collided: {:?} & {}", contacts.entity1, contacts.entity2);
+        if contacts.entity2 != commands.entity(player).id() {
+            commands.entity(contacts.entity2).despawn_recursive();
+        }
+    }
 }
