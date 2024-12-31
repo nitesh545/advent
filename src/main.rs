@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 use rand::{thread_rng, Rng};
 use std::time::Duration;
+use avian2d::dynamics::integrator::IntegrationSet::Velocity;
 use avian2d::prelude::*;
 use bevy::ecs::observer::TriggerTargets;
 
@@ -132,10 +133,10 @@ impl PlayerPlugin {
         asset_server: Res<AssetServer>,
         mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     ) {
-        let texture = asset_server.load("spaceturret.png");
-        let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 4, 4, None, None);
+        let texture = asset_server.load("turret2_fire_animation.png");
+        let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 3, 2, None, None);
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
-        let anim_config = AnimationConfig::new(0, 16, 60, String::from("once"));
+        let anim_config = AnimationConfig::new(0, 5, 60, String::from("once"));
 
         commands.spawn((
             // Mesh2d(meshes.add(Circle::new(25.0))),
@@ -149,7 +150,6 @@ impl PlayerPlugin {
             RigidBody::Kinematic,
             Collider::circle(100.0),
             Sensor,
-            CollidingEntities::default(),
             // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
             Player {
                 speed: 200.0,
@@ -280,20 +280,22 @@ impl PlayerPlugin {
                     0.0,
                 ));
                 let mut dir = pos - transform.translation;
+                dir = dir.normalize();
                 let bullet = commands
                     .spawn((
                         Mesh2d(meshes.add(Circle::new(2.5))),
                         MeshMaterial2d(materials.add(Color::srgb(0.72, 0.96, 0.97))),
                         Transform::from_translation(transform.translation),
                         Bullet {
-                            speed: 800.0,
+                            // speed: 800.0,
+                            speed: 0.0,
                             direction: dir,
                         },
-                        RigidBody::Kinematic,
+                        RigidBody::Dynamic,
                         Collider::circle(5.0),
-                        TransformInterpolation,
-                        Sensor,
-                        CollidingEntities::default(),
+                        TransformExtrapolation,
+                        // ExternalForce::new(avian2d::math::Vector::X * 10000.0),
+                        ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 50000.0),
                     ))
                     .id();
             }
@@ -439,7 +441,6 @@ impl EnemyPlugin {
                 Collider::circle(100.0),
                 TransformInterpolation,
                 Sensor,
-                CollidingEntities::default(),
                 // anim_config,
             ));
         }
@@ -517,6 +518,7 @@ fn main() {
     App::new()
         // .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
         .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
+        .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
         // .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
         2.0,
@@ -612,7 +614,6 @@ fn collision_reader(
         if (q_enemy.contains(contacts.entity1) && q_player.contains(contacts.entity2)) ||
             (q_enemy.contains(contacts.entity2) && q_player.contains(contacts.entity1)) {
             println!("Game Over!");
-            todo!();
         }
     }
 }
