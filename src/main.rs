@@ -262,6 +262,7 @@ impl PlayerPlugin {
         mouse_input: Res<ButtonInput<MouseButton>>,
         mut meshes: ResMut<Assets<Mesh>>,
         mut materials: ResMut<Assets<ColorMaterial>>,
+        asset_server: Res<AssetServer>,
         mut query: Query<&mut Transform, With<Player>>,
         mut q_player: Query<&mut Player, With<Player>>,
         mut q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -281,11 +282,13 @@ impl PlayerPlugin {
                 ));
                 let mut dir = pos - transform.translation;
                 dir = dir.normalize();
+                let angle = dir.y.atan2(dir.x);
                 let bullet = commands
                     .spawn((
-                        Mesh2d(meshes.add(Circle::new(2.5))),
-                        MeshMaterial2d(materials.add(Color::srgb(0.72, 0.96, 0.97))),
-                        Transform::from_translation(transform.translation),
+                        // Mesh2d(meshes.add(Circle::new(2.5))),
+                        // MeshMaterial2d(materials.add(Color::srgb(0.72, 0.96, 0.97))),
+                        Sprite::from_image(asset_server.load("bullet.png")),
+                        Transform::from_translation(transform.translation).with_scale(Vec3::splat(0.1)).with_rotation(Quat::from_rotation_z(angle)),
                         Bullet {
                             // speed: 800.0,
                             speed: 0.0,
@@ -295,7 +298,7 @@ impl PlayerPlugin {
                         Collider::circle(5.0),
                         TransformExtrapolation,
                         // ExternalForce::new(avian2d::math::Vector::X * 10000.0),
-                        ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 50000.0),
+                        ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 500.0),
                     ))
                     .id();
             }
