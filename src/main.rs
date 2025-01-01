@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::window::{CursorGrabMode, PrimaryWindow};
+use bevy::window::{CursorGrabMode, Monitor, PrimaryWindow, WindowMode};
 use rand::{thread_rng, Rng};
 use std::time::Duration;
 use avian2d::dynamics::integrator::IntegrationSet::Velocity;
@@ -86,6 +86,17 @@ struct PlayerPlugin;
 impl PlayerPlugin {
     fn setup_camera(mut commands: Commands) {
         commands.spawn(Camera2d::default());
+    }
+
+    fn setup_space_station(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>
+    ) {
+        commands.spawn(
+            (
+                Sprite::from_image(asset_server.load("spaceStation1.png")),
+                Transform::from_xyz(0.0, 0.0, -1.0)),
+        );
     }
 
     fn setup_background(asset_server: Res<AssetServer>, mut commands: Commands) {
@@ -380,6 +391,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(Startup, Self::setup_background)
             .add_systems(Startup, Self::setup_crosshair)
             .add_systems(Startup, Self::setup_score)
+            .add_systems(Startup, Self::setup_space_station)
             .add_systems(Startup, Self::setup_player)
             .add_systems(Update, Self::player_rotate)
             .add_systems(Update, Self::fire_bullet)
@@ -437,13 +449,16 @@ impl EnemyPlugin {
                 Enemy {
                     health: 100.0,
                     direction: enemy_direction,
-                    speed: enemy_speed,
+                    // speed: enemy_speed,
+                    speed: 0.0,
                     enemy_rotation: rot,
                 },
-                RigidBody::Kinematic,
+                RigidBody::Dynamic,
+                ExternalImpulse::new(avian2d::math::Vector::new(enemy_direction.x, enemy_direction.y) * 650000.0),
                 Collider::circle(100.0),
-                TransformInterpolation,
-                Sensor,
+                Restitution::new(1.0),
+                TransformExtrapolation,
+                // Sensor,
                 // anim_config,
             ));
         }
@@ -520,9 +535,11 @@ impl Plugin for EnemyPlugin {
 fn main() {
     App::new()
         // .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
+        .add_plugins((DefaultPlugins,
+                          // .set(WindowPlugin{primary_window: Some(Window{resizable: false, mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary), ..default()}), ..default()}),
+                      PhysicsPlugins::default()))
         .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
-        // .add_plugins(PhysicsDebugPlugin::default())
+        .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
         2.0,
         TimerMode::Repeating,
@@ -532,6 +549,7 @@ fn main() {
             TimerMode::Repeating,
         )))
         .add_plugins((PlayerPlugin, EnemyPlugin))
+        .add_systems(Startup, setup_bounds)
         .add_systems(Update, debug_inputs)
         .add_systems(Update, collision_reader)
         .run();
@@ -619,4 +637,48 @@ fn collision_reader(
             println!("Game Over!");
         }
     }
+}
+
+fn setup_bounds (
+    mut commands: Commands,
+    mut q_window: Query<&Window, With<PrimaryWindow>>,
+) {
+    let mut win = q_window.single_mut();
+    println!("{} {}", win.size().x, win.size().y);
+    // let right_mid = win.size().x - 1.0 /2.0 + 25.0;
+    let right_mid = 640.0 * 2.0;
+    // let left_mid = win.size().x/2.0 - 25.0;
+    let left_mid = -640.0 * 2.0;
+    // let top_mid = win.size().y - 1.0/2.0 + 25.0;
+    let top_mid = 360.0 * 2.0;
+    // let bottom_mid = win.size().y / 2.0 - 25.0;
+    let bottom_mid = -360.0 * 2.0;
+    commands.spawn(
+        (
+            RigidBody::Kinematic,
+            Collider::rectangle(10.0, 720.0 * 2.0 + 25.0),
+            Transform::from_xyz(right_mid, 0.0, 0.0),
+        )
+    );
+    commands.spawn(
+        (
+            RigidBody::Kinematic,
+            Collider::rectangle(10.0, 720.0 * 2.0 + 25.0),
+            Transform::from_xyz(left_mid, 0.0, 0.0),
+        )
+    );
+    commands.spawn(
+        (
+            RigidBody::Kinematic,
+            Collider::rectangle(1240.0 * 2.0 + 25.0, 10.0),
+            Transform::from_xyz(0.0, top_mid, 0.0),
+        )
+    );
+    commands.spawn(
+        (
+            RigidBody::Kinematic,
+            Collider::rectangle(1240.0 * 2.0 + 25.0, 10.0),
+            Transform::from_xyz(0.0, bottom_mid, 0.0),
+        )
+    );
 }
