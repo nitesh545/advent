@@ -51,6 +51,9 @@ struct AnimationConfig {
     frame_timer: Timer,
 }
 
+#[derive(Component)]
+struct Wall;
+
 impl AnimationConfig {
     fn new(first: usize, last: usize, fps: u8, variant: String) -> Self {
         Self {
@@ -539,7 +542,7 @@ fn main() {
                           // .set(WindowPlugin{primary_window: Some(Window{resizable: false, mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary), ..default()}), ..default()}),
                       PhysicsPlugins::default()))
         .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
-        .add_plugins(PhysicsDebugPlugin::default())
+        // .add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(EnemySapwnTimer(Timer::from_seconds(
         2.0,
         TimerMode::Repeating,
@@ -618,6 +621,7 @@ fn collision_reader(
     q_enemy: Query<Entity, With<Enemy>>,
     q_bullet: Query<Entity, With<Bullet>>,
     q_player: Query<Entity, With<Player>>,
+    q_wall: Query<Entity, With<Wall>>,
     mut commands: Commands,
     mut q_score: Query<&mut Score>
 ) {
@@ -635,6 +639,16 @@ fn collision_reader(
         if (q_enemy.contains(contacts.entity1) && q_player.contains(contacts.entity2)) ||
             (q_enemy.contains(contacts.entity2) && q_player.contains(contacts.entity1)) {
             println!("Game Over!");
+        }
+
+        // collision b/w wall and bullet
+        if q_wall.contains(contacts.entity2) && q_bullet.contains(contacts.entity1) {
+            commands.entity(contacts.entity1).despawn_recursive();
+            // println!("entity despawned: {}", contacts.entity1)
+        }
+        if q_wall.contains(contacts.entity1) && q_bullet.contains(contacts.entity2) {
+            commands.entity(contacts.entity2).despawn_recursive();
+            // println!("entity despawned: {}", contacts.entity2)
         }
     }
 }
@@ -658,6 +672,7 @@ fn setup_bounds (
             RigidBody::Kinematic,
             Collider::rectangle(10.0, 720.0 * 2.0 + 25.0),
             Transform::from_xyz(right_mid, 0.0, 0.0),
+            Wall,
         )
     );
     commands.spawn(
@@ -665,6 +680,7 @@ fn setup_bounds (
             RigidBody::Kinematic,
             Collider::rectangle(10.0, 720.0 * 2.0 + 25.0),
             Transform::from_xyz(left_mid, 0.0, 0.0),
+            Wall,
         )
     );
     commands.spawn(
@@ -672,6 +688,7 @@ fn setup_bounds (
             RigidBody::Kinematic,
             Collider::rectangle(1240.0 * 2.0 + 25.0, 10.0),
             Transform::from_xyz(0.0, top_mid, 0.0),
+            Wall,
         )
     );
     commands.spawn(
@@ -679,6 +696,7 @@ fn setup_bounds (
             RigidBody::Kinematic,
             Collider::rectangle(1240.0 * 2.0 + 25.0, 10.0),
             Transform::from_xyz(0.0, bottom_mid, 0.0),
+            Wall,
         )
     );
 }
