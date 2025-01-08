@@ -644,11 +644,9 @@ fn collision_reader(
         // collision b/w wall and bullet
         if q_wall.contains(contacts.entity2) && q_bullet.contains(contacts.entity1) {
             commands.entity(contacts.entity1).despawn_recursive();
-            // println!("entity despawned: {}", contacts.entity1)
         }
         if q_wall.contains(contacts.entity1) && q_bullet.contains(contacts.entity2) {
             commands.entity(contacts.entity2).despawn_recursive();
-            // println!("entity despawned: {}", contacts.entity2)
         }
     }
 }
