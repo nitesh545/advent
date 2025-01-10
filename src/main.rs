@@ -85,8 +85,10 @@ struct BulletFadeTimer(Timer);
 #[derive(Resource)]
 struct PlayerFireAnimationTimer(Timer);
 
-struct PlayerPlugin;
-impl PlayerPlugin {
+// all basic functionalities like background spawning, changing cursor and setting up camera is
+// handled in GamePlugin
+struct GamePlugin;
+impl GamePlugin{
     fn setup_camera(mut commands: Commands) {
         commands.spawn(Camera2d::default());
     }
@@ -140,6 +142,53 @@ impl PlayerPlugin {
         );
     }
 
+    fn update_score_text(
+        mut q_text: Query<(&mut Text, &mut Score), With<Node>>,
+    ) {
+        let (mut text, mut score) = q_text.single_mut();
+        text.0 = format!("Score: {}", score.score);
+    }
+
+    fn show_score(
+        mut q_score: Query<&mut Score>,
+    ) {
+        let mut score = q_score.single();
+        println!("{}", score.score);
+    }
+
+    fn custom_cursor(
+        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        asset_server: Res<AssetServer>,
+        mut q_cursor: Query<&mut Transform, With<Cursor>>,
+    ) {
+        let win = q_window.single();
+        let mut cursor_position = match win.cursor_position() {
+            Some(k) => k,
+            None => return,
+        };
+        let win_length = win.size().x;
+        let win_height = win.size().y;
+        let mut cursor_transform = q_cursor.single_mut();
+        cursor_transform.translation.x = cursor_position.x - win_length / 2.0;
+        cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
+        cursor_transform.translation.z = 10.0;
+    }
+}
+impl Plugin for GamePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, Self::setup_camera)
+            .add_systems(Startup, Self::setup_background)
+            .add_systems(Startup, Self::setup_crosshair)
+            .add_systems(Startup, Self::setup_score)
+            .add_systems(Startup, Self::setup_space_station)
+            .add_systems(Update, Self::custom_cursor)
+            .add_systems(Update, Self::update_score_text)
+        ;
+    }
+}
+
+struct PlayerPlugin;
+impl PlayerPlugin {
     fn setup_player(
         mut commands: Commands,
         mut meshes: ResMut<Assets<Mesh>>,
@@ -326,24 +375,6 @@ impl PlayerPlugin {
         }
     }
 
-    fn custom_cursor(
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
-        asset_server: Res<AssetServer>,
-        mut q_cursor: Query<&mut Transform, With<Cursor>>,
-    ) {
-        let win = q_window.single();
-        let mut cursor_position = match win.cursor_position() {
-            Some(k) => k,
-            None => return,
-        };
-        let win_length = win.size().x;
-        let win_height = win.size().y;
-        let mut cursor_transform = q_cursor.single_mut();
-        cursor_transform.translation.x = cursor_position.x - win_length / 2.0;
-        cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
-        cursor_transform.translation.z = 10.0;
-    }
-
     fn execute_animations_player(
         time: Res<Time>,
         mut query: Query<(&mut AnimationConfig, &mut Sprite), With<Player>>,
@@ -373,35 +404,14 @@ impl PlayerPlugin {
             }
         }
     }
-
-    fn update_score_text(
-        mut q_text: Query<(&mut Text, &mut Score), With<Node>>,
-    ) {
-        let (mut text, mut score) = q_text.single_mut();
-        text.0 = format!("Score: {}", score.score);
-    }
-
-    fn show_score(
-        mut q_score: Query<&mut Score>,
-    ) {
-        let mut score = q_score.single();
-        println!("{}", score.score);
-    }
 }
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, Self::setup_camera)
-            .add_systems(Startup, Self::setup_background)
-            .add_systems(Startup, Self::setup_crosshair)
-            .add_systems(Startup, Self::setup_score)
-            .add_systems(Startup, Self::setup_space_station)
-            .add_systems(Startup, Self::setup_player)
+        app.add_systems(Startup, Self::setup_player)
             .add_systems(Update, Self::player_rotate)
             .add_systems(Update, Self::fire_bullet)
             .add_systems(Update, Self::move_bullet)
-            .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::execute_animations_player)
-            .add_systems(Update, Self::update_score_text)
         ;
     }
 }
@@ -551,7 +561,7 @@ fn main() {
             1.0,
             TimerMode::Repeating,
         )))
-        .add_plugins((PlayerPlugin, EnemyPlugin))
+        .add_plugins((GamePlugin, PlayerPlugin, EnemyPlugin))
         .add_systems(Startup, setup_bounds)
         .add_systems(Update, debug_inputs)
         .add_systems(Update, collision_reader)
