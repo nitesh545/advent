@@ -633,7 +633,7 @@ fn collision_reader(
     q_player: Query<Entity, With<Player>>,
     q_wall: Query<Entity, With<Wall>>,
     mut commands: Commands,
-    mut q_score: Query<&mut Score>
+    mut q_score: Query<&mut Score>,
 ) {
     let mut score = q_score.single_mut();
     for Collision(contacts) in collision_event_reader.read() {
