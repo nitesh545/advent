@@ -54,6 +54,11 @@ struct AnimationConfig {
 #[derive(Component)]
 struct Wall;
 
+#[derive(Component)]
+struct SpaceStation {
+    rotation_speed: f32,
+}
+
 impl AnimationConfig {
     fn new(first: usize, last: usize, fps: u8, variant: String) -> Self {
         Self {
@@ -100,8 +105,18 @@ impl GamePlugin{
         commands.spawn(
             (
                 Sprite::from_image(asset_server.load("spaceStation1.png")),
-                Transform::from_xyz(0.0, 0.0, -1.0)),
+                Transform::from_xyz(0.0, 0.0, -1.0),
+                SpaceStation{rotation_speed: 0.05},
+            ),
         );
+    }
+
+    fn rotate_space_station(
+        mut q_space_station: Query<(&mut Transform, &SpaceStation), With<SpaceStation>>,
+        time: Res<Time>,
+    ) {
+        let (mut space_station_transform, space_station) = q_space_station.single_mut();
+        space_station_transform.rotate_z(time.delta_secs() * space_station.rotation_speed);
     }
 
     fn setup_background(asset_server: Res<AssetServer>, mut commands: Commands) {
@@ -183,6 +198,7 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, Self::setup_space_station)
             .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::update_score_text)
+            .add_systems(Update, Self::rotate_space_station)
         ;
     }
 }
