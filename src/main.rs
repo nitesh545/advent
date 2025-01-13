@@ -4,6 +4,7 @@ use rand::{thread_rng, Rng};
 use std::time::Duration;
 use avian2d::dynamics::integrator::IntegrationSet::Velocity;
 use avian2d::prelude::*;
+use bevy::audio::PlaybackMode;
 use bevy::ecs::observer::TriggerTargets;
 
 #[derive(Component)]
@@ -188,6 +189,16 @@ impl GamePlugin{
         cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
         cursor_transform.translation.z = 10.0;
     }
+
+    fn setup_music(
+        mut commands: Commands,
+        asset_server: Res<AssetServer>,
+    ) {
+        commands.spawn((
+            AudioPlayer::new(asset_server.load("space_music.ogg")),
+            PlaybackSettings::LOOP,
+            ));
+    }
 }
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
@@ -196,6 +207,7 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, Self::setup_crosshair)
             .add_systems(Startup, Self::setup_score)
             .add_systems(Startup, Self::setup_space_station)
+            .add_systems(Startup, Self::setup_music)
             .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::update_score_text)
             .add_systems(Update, Self::rotate_space_station)
@@ -665,6 +677,7 @@ fn collision_reader(
         if (q_enemy.contains(contacts.entity1) && q_player.contains(contacts.entity2)) ||
             (q_enemy.contains(contacts.entity2) && q_player.contains(contacts.entity1)) {
             println!("Game Over!");
+
         }
 
         // collision b/w wall and bullet
