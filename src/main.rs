@@ -656,11 +656,12 @@ fn collision_player_enemy(
 
 fn collision_reader(
     mut collision_event_reader: EventReader<Collision>,
-    q_enemy: Query<Entity, With<Enemy>>,
+    q_enemy: Query<(&Transform, Entity), With<Enemy>>,
     q_bullet: Query<Entity, With<Bullet>>,
     q_player: Query<Entity, With<Player>>,
     q_wall: Query<Entity, With<Wall>>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut q_score: Query<&mut Score>,
 ) {
     let mut score = q_score.single_mut();
@@ -668,8 +669,19 @@ fn collision_reader(
         // collision b/w meteor and bullet
         if (q_enemy.contains(contacts.entity1) && q_bullet.contains(contacts.entity2)) ||
             (q_enemy.contains(contacts.entity2) && q_bullet.contains(contacts.entity1)) {
+            let ind = q_enemy.iter().position(|(&x, ent)| ent == contacts.entity1 || ent == contacts.entity2).unwrap();
+            let (&transform, ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
+            println!("components 1: {:?}", contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation)));
+            println!("components 2: {:?}", commands.entity(contacts.entity2).id().components());
             commands.entity(contacts.entity2).despawn_recursive();
             commands.entity(contacts.entity1).despawn_recursive();
+            println!("contacts: {:?}", contacts);
+            let collided_at = contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation));
+            println!("Point: {}", collided_at);
+            commands.spawn((
+                Sprite::from_image(asset_server.load("bullet.png")),
+                Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.25)),
+                ));
             score.score += 1;
         }
 
@@ -677,7 +689,6 @@ fn collision_reader(
         if (q_enemy.contains(contacts.entity1) && q_player.contains(contacts.entity2)) ||
             (q_enemy.contains(contacts.entity2) && q_player.contains(contacts.entity1)) {
             println!("Game Over!");
-
         }
 
         // collision b/w wall and bullet
