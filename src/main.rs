@@ -60,6 +60,11 @@ struct SpaceStation {
     rotation_speed: f32,
 }
 
+#[derive(Component)]
+struct Smoke{
+    duration: Timer,
+}
+
 impl AnimationConfig {
     fn new(first: usize, last: usize, fps: u8, variant: String) -> Self {
         Self {
@@ -199,6 +204,22 @@ impl GamePlugin{
             PlaybackSettings::LOOP,
             ));
     }
+
+    fn despawn_smokes(
+        mut q_smoke: Query<(&mut Smoke, Entity, &mut Sprite), With<Smoke>>,
+        mut commands: Commands,
+        time: Res<Time>,
+    ) {
+        for (mut smoke, entity, mut sprite) in q_smoke.iter_mut() {
+            smoke.duration.tick(time.delta());
+            let mut remaining = smoke.duration.remaining().as_secs_f32();
+            let alpha = ((smoke.duration.duration().as_secs_f32() - remaining)/ 2.0).clamp(0.0, 1.0);
+            sprite.color.set_alpha(1.0-alpha);
+            if smoke.duration.just_finished() {
+                commands.entity(entity).despawn_recursive();
+            }
+        }
+    }
 }
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
@@ -211,6 +232,7 @@ impl Plugin for GamePlugin {
             .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::update_score_text)
             .add_systems(Update, Self::rotate_space_station)
+            .add_systems(Update, Self::despawn_smokes)
         ;
     }
 }
@@ -679,8 +701,9 @@ fn collision_reader(
             let collided_at = contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation));
             println!("Point: {}", collided_at);
             commands.spawn((
-                Sprite::from_image(asset_server.load("bullet.png")),
+                Sprite::from_image(asset_server.load("collision_smoke.png")),
                 Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.25)),
+                Smoke{duration: Timer::from_seconds(2.0, TimerMode::Once)},
                 ));
             score.score += 1;
         }
