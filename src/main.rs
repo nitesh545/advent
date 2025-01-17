@@ -65,6 +65,11 @@ struct Smoke{
     duration: Timer,
 }
 
+#[derive(Component)]
+struct BulletFireSound {
+    duration: Timer,
+}
+
 impl AnimationConfig {
     fn new(first: usize, last: usize, fps: u8, variant: String) -> Self {
         Self {
@@ -414,8 +419,29 @@ impl PlayerPlugin {
                         ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 500.0),
                     ))
                     .id();
+                let bullet_fire_entity = commands.spawn((
+                    AudioPlayer::new(asset_server.load("fire.ogg")),
+                    PlaybackSettings::ONCE,
+                    BulletFireSound{duration: Timer::from_seconds(2.0, TimerMode::Once)},
+                    )).id();
             }
         }
+    }
+
+    fn remove_bullet_sound_entities(
+        mut s_query: Query<(&mut BulletFireSound, Entity), With<AudioPlayer>>,
+        mut commands: Commands,
+        time: Res<Time>,
+    ) {
+        // let mut v: Vec<Entity> = Vec::new();
+        for (mut fire_sound, entity) in s_query.iter_mut() {
+            // v.push(entity);
+            fire_sound.duration.tick(time.delta());
+            if fire_sound.duration.just_finished() {
+                commands.entity(entity).despawn_recursive();
+            }
+        };
+        // println!("{v:?}");
     }
 
     fn move_bullet(mut query: Query<(&mut Transform, &mut Bullet), With<Bullet>>, time: Res<Time>) {
@@ -462,6 +488,7 @@ impl Plugin for PlayerPlugin {
             .add_systems(Update, Self::fire_bullet)
             .add_systems(Update, Self::move_bullet)
             .add_systems(Update, Self::execute_animations_player)
+            .add_systems(Update, Self::remove_bullet_sound_entities)
         ;
     }
 }
@@ -693,13 +720,9 @@ fn collision_reader(
             (q_enemy.contains(contacts.entity2) && q_bullet.contains(contacts.entity1)) {
             let ind = q_enemy.iter().position(|(&x, ent)| ent == contacts.entity1 || ent == contacts.entity2).unwrap();
             let (&transform, ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
-            println!("components 1: {:?}", contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation)));
-            println!("components 2: {:?}", commands.entity(contacts.entity2).id().components());
             commands.entity(contacts.entity2).despawn_recursive();
             commands.entity(contacts.entity1).despawn_recursive();
-            println!("contacts: {:?}", contacts);
             let collided_at = contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation));
-            println!("Point: {}", collided_at);
             commands.spawn((
                 Sprite::from_image(asset_server.load("collision_smoke.png")),
                 Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.25)),
