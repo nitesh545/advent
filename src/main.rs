@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 use std::time::Duration;
 use avian2d::dynamics::integrator::IntegrationSet::Velocity;
 use avian2d::prelude::*;
-use bevy::audio::PlaybackMode;
+use bevy::audio::{PlaybackMode, Volume};
 use bevy::ecs::observer::TriggerTargets;
 
 #[derive(Component)]
@@ -62,6 +62,11 @@ struct SpaceStation {
 
 #[derive(Component)]
 struct Smoke{
+    duration: Timer,
+}
+
+#[derive(Component)]
+struct HitSoundBulletMeteor {
     duration: Timer,
 }
 
@@ -225,6 +230,22 @@ impl GamePlugin{
             }
         }
     }
+
+    fn despawn_hit_sounds_bullet_meteor(
+        mut q_sound: Query<(&mut HitSoundBulletMeteor, Entity), With<HitSoundBulletMeteor>>,
+        mut commands: Commands,
+        time: Res<Time>,
+    ){
+        // let mut v: Vec<Entity> = Vec::new();
+        for (mut sound, entity) in q_sound.iter_mut() {
+            sound.duration.tick(time.delta());
+            // v.push(entity);
+            if sound.duration.just_finished() {
+                commands.entity(entity).despawn_recursive();
+            }
+        }
+        // println!("{v:?}");
+    }
 }
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
@@ -238,6 +259,7 @@ impl Plugin for GamePlugin {
             .add_systems(Update, Self::update_score_text)
             .add_systems(Update, Self::rotate_space_station)
             .add_systems(Update, Self::despawn_smokes)
+            .add_systems(Update, Self::despawn_hit_sounds_bullet_meteor)
         ;
     }
 }
@@ -727,6 +749,11 @@ fn collision_reader(
                 Sprite::from_image(asset_server.load("collision_smoke.png")),
                 Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.25)),
                 Smoke{duration: Timer::from_seconds(2.0, TimerMode::Once)},
+                ));
+            commands.spawn((
+                AudioPlayer::new(asset_server.load("explosion.ogg")),
+                PlaybackSettings::ONCE.with_volume(Volume::new(5.0)),
+                HitSoundBulletMeteor {duration: Timer::from_seconds(2.0, TimerMode::Once)},
                 ));
             score.score += 1;
         }
