@@ -23,6 +23,14 @@ struct Score {
 }
 
 #[derive(Component)]
+struct Accuracy {
+    bullets_fired: f32,
+    bullets_hit: f32,
+    accuracy: f32,
+}
+
+
+#[derive(Component)]
 struct Rock {
     health: f32,
 }
@@ -120,7 +128,7 @@ impl GamePlugin{
     ) {
         commands.spawn(
             (
-                Sprite::from_image(asset_server.load("spaceStation1.png")),
+                Sprite::from_image(asset_server.load("spaceStation2.png")),
                 Transform::from_xyz(0.0, 0.0, -1.0),
                 SpaceStation{rotation_speed: 0.05},
             ),
@@ -154,6 +162,7 @@ impl GamePlugin{
 
     fn setup_score(mut commands: Commands) {
         let mut score = Score {score: 0};
+        let mut accuracy = Accuracy {bullets_fired: 0.0, bullets_hit: 0.0, accuracy: 100.0};
 
         commands.spawn(
             (
@@ -171,13 +180,36 @@ impl GamePlugin{
                 },
             )
         );
+        commands.spawn(
+            (
+                Text::new(format!("Accuracy: {}", accuracy.accuracy)),
+                TextFont {
+                    font_size: 45.0,
+                    ..default()
+                },
+                accuracy,
+                Node {
+                    position_type: PositionType::Relative,
+                    top: Val::Px(62.0),
+                    left: Val::Px(12.0),
+                    ..default()
+                },
+            )
+        );
     }
 
     fn update_score_text(
-        mut q_text: Query<(&mut Text, &mut Score), With<Node>>,
+        mut q_text: Query<(&mut Text, &mut Score), With<Score>>,
     ) {
         let (mut text, mut score) = q_text.single_mut();
         text.0 = format!("Score: {}", score.score);
+    }
+
+    fn update_accuracy_text(
+        mut q_text: Query<(&mut Text, &mut Accuracy), With<Accuracy>>,
+    ) {
+        let (mut text, mut accuracy) = q_text.single_mut();
+        text.0 = format!("Accuracy: {}", ((accuracy.bullets_hit/accuracy.bullets_fired)*100.0) as i32);
     }
 
     fn show_score(
@@ -260,6 +292,7 @@ impl Plugin for GamePlugin {
             .add_systems(Update, Self::rotate_space_station)
             .add_systems(Update, Self::despawn_smokes)
             .add_systems(Update, Self::despawn_hit_sounds_bullet_meteor)
+            .add_systems(Update, Self::update_accuracy_text)
         ;
     }
 }
@@ -406,6 +439,7 @@ impl PlayerPlugin {
         mut query: Query<&mut Transform, With<Player>>,
         mut q_player: Query<&mut Player, With<Player>>,
         mut q_windows: Query<&Window, With<PrimaryWindow>>,
+        mut q_accuracy: Query<&mut Accuracy, With<Accuracy>>,
         time: Res<Time>,
     ) {
         let mut player = q_player.single_mut();
@@ -446,6 +480,8 @@ impl PlayerPlugin {
                     PlaybackSettings::ONCE,
                     BulletFireSound{duration: Timer::from_seconds(2.0, TimerMode::Once)},
                     )).id();
+                let mut accuracy = q_accuracy.single_mut();
+                accuracy.bullets_fired += 1.0;
             }
         }
     }
@@ -734,8 +770,10 @@ fn collision_reader(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut q_score: Query<&mut Score>,
+    mut q_accuracy: Query<&mut Accuracy, With<Accuracy>>,
 ) {
     let mut score = q_score.single_mut();
+    let mut accuracy = q_accuracy.single_mut();
     for Collision(contacts) in collision_event_reader.read() {
         // collision b/w meteor and bullet
         if (q_enemy.contains(contacts.entity1) && q_bullet.contains(contacts.entity2)) ||
@@ -756,6 +794,7 @@ fn collision_reader(
                 HitSoundBulletMeteor {duration: Timer::from_seconds(2.0, TimerMode::Once)},
                 ));
             score.score += 1;
+            accuracy.bullets_hit += 1.0;
         }
 
         // collision b/w meteor and player
