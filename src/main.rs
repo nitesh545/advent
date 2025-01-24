@@ -128,9 +128,9 @@ impl GamePlugin{
     ) {
         commands.spawn(
             (
-                Sprite::from_image(asset_server.load("spaceStation2.png")),
-                Transform::from_xyz(0.0, 0.0, -1.0),
-                SpaceStation{rotation_speed: 0.05},
+                Sprite::from_image(asset_server.load("spaceStation4.png")),
+                Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(0.1)),
+                SpaceStation{rotation_speed: 0.06},
             ),
         );
     }
@@ -462,7 +462,7 @@ impl PlayerPlugin {
                         // Mesh2d(meshes.add(Circle::new(2.5))),
                         // MeshMaterial2d(materials.add(Color::srgb(0.72, 0.96, 0.97))),
                         Sprite::from_image(asset_server.load("bullet.png")),
-                        Transform::from_translation(transform.translation).with_scale(Vec3::splat(0.1)).with_rotation(Quat::from_rotation_z(angle)),
+                        Transform::from_translation(transform.translation).with_scale(Vec3::splat(0.2)).with_rotation(Quat::from_rotation_z(angle)),
                         Bullet {
                             // speed: 800.0,
                             speed: 0.0,
@@ -472,7 +472,7 @@ impl PlayerPlugin {
                         Collider::circle(5.0),
                         TransformExtrapolation,
                         // ExternalForce::new(avian2d::math::Vector::X * 10000.0),
-                        ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 500.0),
+                        ExternalImpulse::new(avian2d::math::Vector::from((dir.x, dir.y)) * 1500.0),
                     ))
                     .id();
                 let bullet_fire_entity = commands.spawn((
@@ -784,8 +784,8 @@ fn collision_reader(
             commands.entity(contacts.entity1).despawn_recursive();
             let collided_at = contacts.manifolds[0].contacts[0].global_point1(&Position::from_xy(transform.translation.x, transform.translation.y), &Rotation::from(transform.rotation));
             commands.spawn((
-                Sprite::from_image(asset_server.load("collision_smoke.png")),
-                Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.25)),
+                Sprite::from_image(asset_server.load("collision_smoke1.png")),
+                Transform::from_xyz(collided_at.x, collided_at.y, 0.0).with_scale(Vec3::splat(0.75)),
                 Smoke{duration: Timer::from_seconds(2.0, TimerMode::Once)},
                 ));
             commands.spawn((
