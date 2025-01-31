@@ -716,7 +716,8 @@ fn debug_inputs(
         primary_window.cursor_options.visible = true;
     }
     if keyboard_input.pressed(KeyCode::Escape) {
-        exit.send(AppExit::Success);
+        // exit.send(AppExit::Success);
+        std::process::exit(0);
     }
 }
 
