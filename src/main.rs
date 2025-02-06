@@ -130,7 +130,7 @@ impl GamePlugin{
             (
                 Sprite::from_image(asset_server.load("spaceStation4.png")),
                 Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(0.1)),
-                SpaceStation{rotation_speed: 0.05},
+                SpaceStation{rotation_speed: 0.06},
             ),
         );
     }
