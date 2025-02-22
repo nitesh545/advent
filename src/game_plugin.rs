@@ -157,15 +157,12 @@ impl GamePlugin {
         mut commands: Commands,
         time: Res<Time>,
     ) {
-        // let mut v: Vec<Entity> = Vec::new();
         for (mut sound, entity) in q_sound.iter_mut() {
             sound.duration.tick(time.delta());
-            // v.push(entity);
             if sound.duration.just_finished() {
                 commands.entity(entity).despawn_recursive();
             }
         }
-        // println!("{v:?}");
     }
 }
 
