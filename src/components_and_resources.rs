@@ -1,16 +1,8 @@
-use avian2d::dynamics::integrator::IntegrationSet::Velocity;
-use avian2d::prelude::*;
-use bevy::audio::{PlaybackMode, Volume};
-use bevy::ecs::observer::TriggerTargets;
+use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{CursorGrabMode, Monitor, PrimaryWindow, WindowMode};
-use rand::{Rng, thread_rng};
+use bevy::window::{Monitor, PrimaryWindow, WindowMode};
+use rand::thread_rng;
 use std::time::Duration;
-
-#[derive(Component)]
-pub struct Rock {
-    pub health: f32,
-}
 
 #[derive(Component)]
 pub struct Wall;

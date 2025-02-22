@@ -1,15 +1,12 @@
-use avian2d::dynamics::integrator::IntegrationSet::Velocity;
-use avian2d::prelude::*;
-use bevy::audio::{PlaybackMode, Volume};
-use bevy::ecs::observer::TriggerTargets;
+use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{CursorGrabMode, Monitor, PrimaryWindow, WindowMode};
-use rand::{Rng, thread_rng};
+use bevy::window::{Monitor, PrimaryWindow, WindowMode};
+use rand::thread_rng;
 use std::time::Duration;
 
 use crate::components_and_resources::{
     Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Rock, Score, Smoke,
+    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
     SpaceStation, Wall,
 };
 
