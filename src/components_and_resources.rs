@@ -1,7 +1,7 @@
-use bevy::audio::Volume;
+//use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
+//use bevy::window::{Monitor, PrimaryWindow, WindowMode};
+//use rand::thread_rng;
 use std::time::Duration;
 
 #[derive(Component)]
@@ -30,6 +30,7 @@ pub struct Smoke {
     pub duration: Timer,
 }
 
+#[allow(dead_code)]
 #[derive(Component)]
 pub struct Player {
     pub speed: f32,
@@ -88,12 +89,15 @@ pub struct BulletFireSound {
     pub duration: Timer,
 }
 
+#[allow(dead_code)]
 #[derive(Resource)]
 pub struct BulletFadeTimer(pub Timer);
 
+#[allow(dead_code)]
 #[derive(Resource)]
 pub struct PlayerFireAnimationTimer(pub Timer);
 
+#[allow(dead_code)]
 #[derive(Component)]
 pub struct Enemy {
     pub health: f32,

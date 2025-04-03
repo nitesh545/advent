@@ -1,21 +1,17 @@
 use avian2d::prelude::*;
-use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
+use bevy::window::PrimaryWindow;
 
-use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
-};
+use crate::components_and_resources::{Accuracy, AnimationConfig, Bullet, BulletFireSound, Player};
 
 pub struct PlayerPlugin;
+
+#[allow(unused_variables)]
 impl PlayerPlugin {
     pub fn setup_player(
         mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
+        meshes: ResMut<Assets<Mesh>>,
+        materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
         mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     ) {
@@ -52,11 +48,12 @@ impl PlayerPlugin {
         ));
     }
 
+    #[allow(dead_code)]
     pub fn player_movement(
         time: Res<Time>,
         keyboard_input: Res<ButtonInput<KeyCode>>,
         mut query: Query<(&mut Transform, &mut Player), With<Player>>,
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
     ) {
         let time_step = time.delta_secs();
         let win = q_window.single();
@@ -121,12 +118,12 @@ impl PlayerPlugin {
     }
 
     pub fn player_rotate(
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
-        mut q_player: Query<(&mut Transform), With<Player>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
+        mut q_player: Query<&mut Transform, With<Player>>,
     ) {
         let win = q_window.single();
         let mut transform = q_player.single_mut();
-        let mut position = match win.cursor_position() {
+        let position = match win.cursor_position() {
             Some(k) => k,
             None => return,
         };
@@ -149,24 +146,24 @@ impl PlayerPlugin {
         mut commands: Commands,
         keyboard_input: Res<ButtonInput<KeyCode>>,
         mouse_input: Res<ButtonInput<MouseButton>>,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
+        meshes: ResMut<Assets<Mesh>>,
+        materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
         mut query: Query<&mut Transform, With<Player>>,
         mut q_player: Query<&mut Player, With<Player>>,
-        mut q_windows: Query<&Window, With<PrimaryWindow>>,
+        q_windows: Query<&Window, With<PrimaryWindow>>,
         mut q_accuracy: Query<&mut Accuracy, With<Accuracy>>,
         time: Res<Time>,
     ) {
-        let mut player = q_player.single_mut();
+        let player = q_player.single_mut();
         if keyboard_input.just_pressed(KeyCode::Space)
             || mouse_input.just_pressed(MouseButton::Left)
         {
             let win = q_windows.single();
-            let mut position = win.cursor_position().unwrap();
+            let position = win.cursor_position().unwrap();
             let win_length = win.size().x;
             let win_height = win.size().y;
-            for mut transform in query.iter_mut() {
+            for transform in query.iter_mut() {
                 let pos = Vec3::from((
                     position.x - win_length / 2.0,
                     win_height / 2.0 - position.y,
@@ -224,7 +221,7 @@ impl PlayerPlugin {
         time: Res<Time>,
     ) {
         let time_step = time.delta_secs();
-        for (mut transform, mut bullet) in query.iter_mut() {
+        for (mut transform, bullet) in query.iter_mut() {
             transform.translation += bullet.speed * time_step * bullet.direction.normalize();
         }
     }

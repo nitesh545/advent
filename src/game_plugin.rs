@@ -1,13 +1,8 @@
-use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
-use std::time::Duration;
+use bevy::window::PrimaryWindow;
 
 use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
+    Accuracy, Cursor, HitSoundBulletMeteor, Score, Smoke, SpaceStation,
 };
 
 // all basic functionalities like background spawning, changing cursor and setting up camera is
@@ -52,8 +47,8 @@ impl GamePlugin {
     }
 
     pub fn setup_score(mut commands: Commands) {
-        let mut score = Score { score: 0 };
-        let mut accuracy = Accuracy {
+        let score = Score { score: 0 };
+        let accuracy = Accuracy {
             bullets_fired: 0.0,
             bullets_hit: 0.0,
             accuracy: 100.0,
@@ -90,30 +85,31 @@ impl GamePlugin {
     }
 
     pub fn update_score_text(mut q_text: Query<(&mut Text, &mut Score), With<Score>>) {
-        let (mut text, mut score) = q_text.single_mut();
+        let (mut text, score) = q_text.single_mut();
         text.0 = format!("Score: {}", score.score);
     }
 
     pub fn update_accuracy_text(mut q_text: Query<(&mut Text, &mut Accuracy), With<Accuracy>>) {
-        let (mut text, mut accuracy) = q_text.single_mut();
+        let (mut text, accuracy) = q_text.single_mut();
         text.0 = format!(
             "Accuracy: {}",
             ((accuracy.bullets_hit / accuracy.bullets_fired) * 100.0) as i32
         );
     }
 
-    pub fn show_score(mut q_score: Query<&mut Score>) {
-        let mut score = q_score.single();
+    #[allow(dead_code)]
+    pub fn show_score(q_score: Query<&mut Score>) {
+        let score = q_score.single();
         println!("{}", score.score);
     }
 
     pub fn custom_cursor(
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
-        asset_server: Res<AssetServer>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
+        _asset_server: Res<AssetServer>,
         mut q_cursor: Query<&mut Transform, With<Cursor>>,
     ) {
         let win = q_window.single();
-        let mut cursor_position = match win.cursor_position() {
+        let cursor_position = match win.cursor_position() {
             Some(k) => k,
             None => return,
         };
@@ -139,7 +135,7 @@ impl GamePlugin {
     ) {
         for (mut smoke, entity, mut sprite) in q_smoke.iter_mut() {
             smoke.duration.tick(time.delta());
-            let mut remaining = smoke.duration.remaining().as_secs_f32();
+            let remaining = smoke.duration.remaining().as_secs_f32();
             let alpha =
                 ((smoke.duration.duration().as_secs_f32() - remaining) / 2.0).clamp(0.0, 1.0);
             sprite.color.set_alpha(1.0 - alpha);

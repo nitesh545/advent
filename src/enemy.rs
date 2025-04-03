@@ -1,25 +1,21 @@
 use avian2d::prelude::*;
-use bevy::audio::Volume;
+//use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
+use bevy::window::PrimaryWindow;
 use rand::Rng;
 
-use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
-};
+use crate::components_and_resources::{AnimationConfig, Enemy, EnemySapwnTimer};
 
 pub struct EnemyPlugin;
-
+#[allow(unused_variables)]
 impl EnemyPlugin {
     pub fn spawn_enemies(
         mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
+        meshes: ResMut<Assets<Mesh>>,
+        materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
-        mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
         mut timer: ResMut<EnemySapwnTimer>,
         time: Res<Time>,
     ) {
@@ -63,7 +59,7 @@ impl EnemyPlugin {
     pub fn move_enemies(
         mut query: Query<(&mut Transform, &mut Enemy), With<Enemy>>,
         time: Res<Time>,
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
     ) {
         let win = q_window.single();
         let time_step = time.delta_secs();
@@ -93,6 +89,7 @@ impl EnemyPlugin {
         }
     }
 
+    #[allow(dead_code)]
     pub fn execute_animations_enemies(
         time: Res<Time>,
         mut q_enemy: Query<(&mut AnimationConfig, &mut Sprite), With<Enemy>>,

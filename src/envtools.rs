@@ -1,19 +1,16 @@
 use avian2d::prelude::*;
 use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
+use bevy::window::PrimaryWindow;
 
 use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
+    Accuracy, Bullet, Enemy, HitSoundBulletMeteor, Player, Score, Smoke, Wall,
 };
 
 pub fn debug_inputs(
     mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut exit: EventWriter<AppExit>,
+    _exit: EventWriter<AppExit>,
 ) {
     let mut primary_window = q_windows.single_mut();
     if keyboard_input.pressed(KeyCode::F1) {
@@ -27,6 +24,7 @@ pub fn debug_inputs(
     }
 }
 
+#[allow(dead_code, unused_variables)]
 pub fn collision_bullet_enemy(
     mut q_enemy: Query<(&mut Transform, &mut Enemy, Entity), (With<Enemy>, Without<Bullet>)>,
     mut q_bullet: Query<(&mut Transform, &mut Bullet, Entity), (With<Bullet>, Without<Enemy>)>,
@@ -34,8 +32,8 @@ pub fn collision_bullet_enemy(
     mut q_score: Query<&mut Score>,
 ) {
     let mut score = q_score.single_mut();
-    for (mut transform_e, mut enemy, entity_e) in q_enemy.iter_mut() {
-        for (mut transform_b, mut bullet, entity_b) in q_bullet.iter_mut() {
+    for (transform_e, enemy, entity_e) in q_enemy.iter_mut() {
+        for (transform_b, bullet, entity_b) in q_bullet.iter_mut() {
             let right_bound = transform_e.translation.x + 25.0 >= transform_b.translation.x;
             let left_bound = transform_e.translation.x - 25.0 <= transform_b.translation.x;
             let upper_bound = transform_e.translation.y + 25.0 >= transform_b.translation.y;
@@ -69,9 +67,9 @@ pub fn collision_reader(
         {
             let ind = q_enemy
                 .iter()
-                .position(|(&x, ent)| ent == contacts.entity1 || ent == contacts.entity2)
+                .position(|(&_x, ent)| ent == contacts.entity1 || ent == contacts.entity2)
                 .unwrap();
-            let (&transform, ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
+            let (&transform, _ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
             commands.entity(contacts.entity2).despawn_recursive();
             commands.entity(contacts.entity1).despawn_recursive();
             let collided_at = contacts.manifolds[0].contacts[0].global_point1(
@@ -115,7 +113,7 @@ pub fn collision_reader(
 }
 
 pub fn setup_bounds(mut commands: Commands, mut q_window: Query<&Window, With<PrimaryWindow>>) {
-    let mut win = q_window.single_mut();
+    let _win = q_window.single_mut();
 
     let right_mid = 640.0 * 2.0;
     let left_mid = -640.0 * 2.0;

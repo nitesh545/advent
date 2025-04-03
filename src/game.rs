@@ -1,15 +1,7 @@
 use avian2d::prelude::*;
-use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
 
-use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
-};
-use crate::{components_and_resources, enemy, envtools, game, game_plugin, player};
+use crate::{components_and_resources, enemy, envtools, game_plugin, player};
 
 pub fn run() {
     App::new()
