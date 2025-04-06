@@ -20,21 +20,25 @@ impl EnemyPlugin {
         time: Res<Time>,
     ) {
         if timer.0.tick(time.delta()).just_finished() {
-            let mut rng = rand::thread_rng();
+            let mut rng = rand::rng();
             let win = q_window.single();
             let win_length = win.size().x;
             let win_height = win.size().y;
-            let enemy_direction =
-                Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
-            let enemy_speed = rng.gen_range(50.0..200.0);
-            let rot = rng.gen_range(-4.0..4.0);
-            let scale = Vec3::splat(rng.gen_range(0.25..0.45));
+            let enemy_direction = Vec3::new(
+                rng.random_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
+                0.0,
+            )
+            .normalize();
+            let enemy_speed = rng.random_range(50.0..200.0);
+            let rot = rng.random_range(-4.0..4.0);
+            let scale = Vec3::splat(rng.random_range(0.25..0.45));
 
             commands.spawn((
                 Sprite::from_image(asset_server.load("rock.png")),
                 Transform::from_xyz(
-                    rng.gen_range(-1.0 * win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
-                    rng.gen_range(-1.0 * win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
+                    rng.random_range(-1.0 * win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
+                    rng.random_range(-1.0 * win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
                     0.0,
                 )
                 .with_scale(scale),
