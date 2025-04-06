@@ -2,7 +2,7 @@ android:
     gradle: true
     icon: ""
     manifest:
-        package: "com.example.bevygame"
+        package: "com.cosmos545.advent"
         version_code: 1
         application:
-            label: "Bevy game"
+            label: "Advent"

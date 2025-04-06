@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
+use crate::adventui::reactivity;
+use crate::adventui::setup_button;
 use crate::components_and_resources::{
     Accuracy, Cursor, HitSoundBulletMeteor, Score, Smoke, SpaceStation,
 };
@@ -167,6 +169,8 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, Self::setup_score)
             .add_systems(Startup, Self::setup_space_station)
             .add_systems(Startup, Self::setup_music)
+            //.add_systems(Startup, setup_button)
+            //.add_systems(Update, reactivity)
             .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::update_score_text)
             .add_systems(Update, Self::rotate_space_station)
