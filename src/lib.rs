@@ -12,6 +12,7 @@ fn main() {
     run_game();
 }
 
+#[unsafe(no_mangle)]
 pub fn run_game() {
     game::run();
 }

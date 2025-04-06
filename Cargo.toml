@@ -50,13 +50,16 @@ path = "src/main.rs"
 
 [package.metadata.android]
 package = "com.cosmos545.advent"
-version_code = 1
 apk_name = "Advent"
 assets = "assets"
 build_targets = [
     "aarch64-linux-android",
     "armv7-linux-androideabi",
 ]
+
+[package.metadata.android.signing.release]
+path              = "C:/Users/nitec/.android/debug.keystore"
+keystore_password = "android"
 
 [package.metadata.android.sdk]
 target_sdk_version = 36
