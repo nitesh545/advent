@@ -1,14 +1,9 @@
 use avian2d::prelude::*;
-use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
+use bevy::window::PrimaryWindow;
 use rand::Rng;
 
-use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
-};
+use crate::components_and_resources::{AnimationConfig, Enemy, EnemySapwnTimer};
 
 pub struct EnemyPlugin;
 
@@ -25,7 +20,7 @@ impl EnemyPlugin {
     ) {
         if timer.0.tick(time.delta()).just_finished() {
             let mut rng = rand::thread_rng();
-            let win = q_window.single();
+            let win = q_window.single().unwrap();
             let win_length = win.size().x;
             let win_height = win.size().y;
             let enemy_direction =
@@ -45,27 +40,21 @@ impl EnemyPlugin {
                 Enemy {
                     health: 100.0,
                     direction: enemy_direction,
-                    // speed: enemy_speed,
-                    speed: 0.0,
+                    speed: enemy_speed,
+                    //speed: 0.0,
                     enemy_rotation: rot,
                 },
-                RigidBody::Dynamic,
-                ExternalImpulse::new(
-                    avian2d::math::Vector::new(enemy_direction.x, enemy_direction.y) * 650000.0,
-                ),
-                Collider::circle(100.0),
-                Restitution::new(1.0),
-                TransformExtrapolation,
             ));
+        
         }
     }
 
     pub fn move_enemies(
         mut query: Query<(&mut Transform, &mut Enemy), With<Enemy>>,
         time: Res<Time>,
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
     ) {
-        let win = q_window.single();
+        let win = q_window.single().unwrap();
         let time_step = time.delta_secs();
         for (mut transform, mut enemy) in query.iter_mut() {
             if transform.translation.x >= win.size().x / 2.0 - 25.0
@@ -116,7 +105,8 @@ impl EnemyPlugin {
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, Self::spawn_enemies)
+        app
+            .add_systems(Update, Self::spawn_enemies)
             .add_systems(Update, Self::move_enemies)
             .add_systems(Update, Self::rotate_enemies);
     }

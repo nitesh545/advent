@@ -1,13 +1,8 @@
-use bevy::audio::Volume;
 use bevy::prelude::*;
-use bevy::window::{Monitor, PrimaryWindow, WindowMode};
-use rand::thread_rng;
-use std::time::Duration;
+use bevy::window::PrimaryWindow;
 
 use crate::components_and_resources::{
-    Accuracy, AnimationConfig, Bullet, BulletFadeTimer, BulletFireSound, Cursor, Enemy,
-    EnemySapwnTimer, HitSoundBulletMeteor, Player, PlayerFireAnimationTimer, Score, Smoke,
-    SpaceStation, Wall,
+    Accuracy, Cursor, HitSoundBulletMeteor, Score, Smoke, SpaceStation,
 };
 
 // all basic functionalities like background spawning, changing cursor and setting up camera is
@@ -32,7 +27,7 @@ impl GamePlugin {
         mut q_space_station: Query<(&mut Transform, &SpaceStation), With<SpaceStation>>,
         time: Res<Time>,
     ) {
-        let (mut space_station_transform, space_station) = q_space_station.single_mut();
+        let (mut space_station_transform, space_station) = q_space_station.single_mut().unwrap();
         space_station_transform.rotate_z(time.delta_secs() * space_station.rotation_speed);
     }
 
@@ -52,8 +47,8 @@ impl GamePlugin {
     }
 
     pub fn setup_score(mut commands: Commands) {
-        let mut score = Score { score: 0 };
-        let mut accuracy = Accuracy {
+        let score = Score { score: 0 };
+        let accuracy = Accuracy {
             bullets_fired: 0.0,
             bullets_hit: 0.0,
             accuracy: 100.0,
@@ -90,36 +85,36 @@ impl GamePlugin {
     }
 
     pub fn update_score_text(mut q_text: Query<(&mut Text, &mut Score), With<Score>>) {
-        let (mut text, mut score) = q_text.single_mut();
+        let (mut text, score) = q_text.single_mut().unwrap();
         text.0 = format!("Score: {}", score.score);
     }
 
     pub fn update_accuracy_text(mut q_text: Query<(&mut Text, &mut Accuracy), With<Accuracy>>) {
-        let (mut text, mut accuracy) = q_text.single_mut();
+        let (mut text, accuracy) = q_text.single_mut().unwrap();
         text.0 = format!(
             "Accuracy: {}",
             ((accuracy.bullets_hit / accuracy.bullets_fired) * 100.0) as i32
         );
     }
 
-    pub fn show_score(mut q_score: Query<&mut Score>) {
-        let mut score = q_score.single();
+    pub fn show_score(q_score: Query<&mut Score>) {
+        let score = q_score.single().unwrap();
         println!("{}", score.score);
     }
 
     pub fn custom_cursor(
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
-        asset_server: Res<AssetServer>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
+        _asset_server: Res<AssetServer>,
         mut q_cursor: Query<&mut Transform, With<Cursor>>,
     ) {
-        let win = q_window.single();
-        let mut cursor_position = match win.cursor_position() {
+        let win = q_window.single().unwrap();
+        let cursor_position = match win.cursor_position() {
             Some(k) => k,
             None => return,
         };
         let win_length = win.size().x;
         let win_height = win.size().y;
-        let mut cursor_transform = q_cursor.single_mut();
+        let mut cursor_transform = q_cursor.single_mut().unwrap();
         cursor_transform.translation.x = cursor_position.x - win_length / 2.0;
         cursor_transform.translation.y = win_height / 2.0 - cursor_position.y;
         cursor_transform.translation.z = 10.0;
@@ -139,12 +134,12 @@ impl GamePlugin {
     ) {
         for (mut smoke, entity, mut sprite) in q_smoke.iter_mut() {
             smoke.duration.tick(time.delta());
-            let mut remaining = smoke.duration.remaining().as_secs_f32();
+            let remaining = smoke.duration.remaining().as_secs_f32();
             let alpha =
                 ((smoke.duration.duration().as_secs_f32() - remaining) / 2.0).clamp(0.0, 1.0);
             sprite.color.set_alpha(1.0 - alpha);
             if smoke.duration.just_finished() {
-                commands.entity(entity).despawn_recursive();
+                commands.entity(entity).despawn();
             }
         }
     }
@@ -157,7 +152,7 @@ impl GamePlugin {
         for (mut sound, entity) in q_sound.iter_mut() {
             sound.duration.tick(time.delta());
             if sound.duration.just_finished() {
-                commands.entity(entity).despawn_recursive();
+                commands.entity(entity).despawn();
             }
         }
     }
