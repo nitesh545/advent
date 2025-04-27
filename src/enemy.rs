@@ -1,4 +1,8 @@
 use avian2d::prelude::*;
+<<<<<<< HEAD
+=======
+//use bevy::audio::Volume;
+>>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use rand::Rng;
@@ -6,34 +10,43 @@ use rand::Rng;
 use crate::components_and_resources::{AnimationConfig, Enemy, EnemySapwnTimer};
 
 pub struct EnemyPlugin;
-
+#[allow(unused_variables)]
 impl EnemyPlugin {
     pub fn spawn_enemies(
         mut commands: Commands,
-        mut meshes: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<ColorMaterial>>,
+        meshes: ResMut<Assets<Mesh>>,
+        materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
-        mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
-        mut q_window: Query<&Window, With<PrimaryWindow>>,
+        texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+        q_window: Query<&Window, With<PrimaryWindow>>,
         mut timer: ResMut<EnemySapwnTimer>,
         time: Res<Time>,
     ) {
         if timer.0.tick(time.delta()).just_finished() {
+<<<<<<< HEAD
             let mut rng = rand::thread_rng();
             let win = q_window.single().unwrap();
+=======
+            let mut rng = rand::rng();
+            let win = q_window.single();
+>>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
             let win_length = win.size().x;
             let win_height = win.size().y;
-            let enemy_direction =
-                Vec3::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0).normalize();
-            let enemy_speed = rng.gen_range(50.0..200.0);
-            let rot = rng.gen_range(-4.0..4.0);
-            let scale = Vec3::splat(rng.gen_range(0.25..0.45));
+            let enemy_direction = Vec3::new(
+                rng.random_range(-1.0..1.0),
+                rng.random_range(-1.0..1.0),
+                0.0,
+            )
+            .normalize();
+            let enemy_speed = rng.random_range(50.0..200.0);
+            let rot = rng.random_range(-4.0..4.0);
+            let scale = Vec3::splat(rng.random_range(0.25..0.45));
 
             commands.spawn((
                 Sprite::from_image(asset_server.load("rock.png")),
                 Transform::from_xyz(
-                    rng.gen_range(-1.0 * win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
-                    rng.gen_range(-1.0 * win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
+                    rng.random_range(-1.0 * win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
+                    rng.random_range(-1.0 * win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
                     0.0,
                 )
                 .with_scale(scale),
@@ -82,6 +95,7 @@ impl EnemyPlugin {
         }
     }
 
+    #[allow(dead_code)]
     pub fn execute_animations_enemies(
         time: Res<Time>,
         mut q_enemy: Query<(&mut AnimationConfig, &mut Sprite), With<Enemy>>,

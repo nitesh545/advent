@@ -4,9 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+<<<<<<< HEAD
 avian2d = "0.2.1"
 bevy = "0.16.0"
 rand = "0.8.5"
+=======
+avian2d = "0.2.0"
+bevy    = "0.15.3"
+rand    = "0.9.0"
+>>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
@@ -34,3 +40,35 @@ inherits = "release"
 opt-level = "s"
 # Strip all debugging information from the binary to slightly reduce file size.
 strip = "debuginfo"
+
+[lib]
+crate-type = [
+    "staticlib",
+    "cdylib",
+    "rlib",
+]
+name = "advent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "advent"
+path = "src/main.rs"
+
+[package.metadata.android]
+package = "com.cosmos545.advent"
+apk_name = "Advent"
+assets = "assets"
+build_targets = [
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+]
+
+[package.metadata.android.signing.release]
+path              = "C:/Users/nitec/.android/debug.keystore"
+keystore_password = "android"
+
+[package.metadata.android.sdk]
+target_sdk_version = 36
+
+[package.metadata.android.application]
+label = "Advent"
