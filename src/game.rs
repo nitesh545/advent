@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 //use avian2d::prelude::*;
-=======
-use avian2d::prelude::*;
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
 use bevy::prelude::*;
 
 use crate::{components_and_resources, enemy, envtools, game_plugin, player};

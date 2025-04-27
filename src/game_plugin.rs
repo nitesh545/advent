@@ -1,10 +1,6 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-<<<<<<< HEAD
-
-=======
 use crate::adventui::setup_progress_bar;
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
 use crate::components_and_resources::{
     Accuracy, Cursor, HitSoundBulletMeteor, Score, Smoke, SpaceStation,
 };
@@ -89,34 +85,21 @@ impl GamePlugin {
     }
 
     pub fn update_score_text(mut q_text: Query<(&mut Text, &mut Score), With<Score>>) {
-<<<<<<< HEAD
         let (mut text, score) = q_text.single_mut().unwrap();
-=======
-        let (mut text, score) = q_text.single_mut();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
         text.0 = format!("Score: {}", score.score);
     }
 
     pub fn update_accuracy_text(mut q_text: Query<(&mut Text, &mut Accuracy), With<Accuracy>>) {
-<<<<<<< HEAD
         let (mut text, accuracy) = q_text.single_mut().unwrap();
-=======
-        let (mut text, accuracy) = q_text.single_mut();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
         text.0 = format!(
             "Accuracy: {}",
             ((accuracy.bullets_hit / accuracy.bullets_fired) * 100.0) as i32
         );
     }
 
-<<<<<<< HEAD
-    pub fn show_score(q_score: Query<&mut Score>) {
-        let score = q_score.single().unwrap();
-=======
     #[allow(dead_code)]
     pub fn show_score(q_score: Query<&mut Score>) {
-        let score = q_score.single();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
+        let score = q_score.single().unwrap();
         println!("{}", score.score);
     }
 
@@ -125,11 +108,7 @@ impl GamePlugin {
         _asset_server: Res<AssetServer>,
         mut q_cursor: Query<&mut Transform, With<Cursor>>,
     ) {
-<<<<<<< HEAD
         let win = q_window.single().unwrap();
-=======
-        let win = q_window.single();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
         let cursor_position = match win.cursor_position() {
             Some(k) => k,
             None => return,

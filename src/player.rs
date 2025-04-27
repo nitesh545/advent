@@ -1,4 +1,4 @@
-use avian2d::prelude::*;
+//use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -140,7 +140,6 @@ impl PlayerPlugin {
         q_window: Query<&Window, With<PrimaryWindow>>,
         mut q_player: Query<&mut Transform, With<Player>>,
     ) {
-<<<<<<< HEAD
         let win = match q_window.single() {
             Ok(k) => k,
             Err(_e) => return,
@@ -149,10 +148,6 @@ impl PlayerPlugin {
             Ok(k) => k,
             Err(_e) => return,
         };
-=======
-        let win = q_window.single();
-        let mut transform = q_player.single_mut();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
         let position = match win.cursor_position() {
             Some(k) => k,
             None => return,
@@ -189,13 +184,8 @@ impl PlayerPlugin {
         if keyboard_input.just_pressed(KeyCode::Space)
             || mouse_input.just_pressed(MouseButton::Left)
         {
-<<<<<<< HEAD
             let win = q_windows.single().unwrap();
-            let mut position = win.cursor_position().unwrap();
-=======
-            let win = q_windows.single();
             let position = win.cursor_position().unwrap();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
             let win_length = win.size().x;
             let win_height = win.size().y;
             for transform in query.iter_mut() {

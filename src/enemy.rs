@@ -1,8 +1,4 @@
-use avian2d::prelude::*;
-<<<<<<< HEAD
-=======
-//use bevy::audio::Volume;
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
+//use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use rand::Rng;
@@ -23,13 +19,8 @@ impl EnemyPlugin {
         time: Res<Time>,
     ) {
         if timer.0.tick(time.delta()).just_finished() {
-<<<<<<< HEAD
-            let mut rng = rand::thread_rng();
-            let win = q_window.single().unwrap();
-=======
             let mut rng = rand::rng();
-            let win = q_window.single();
->>>>>>> 8b82ae42c9bc32b3cf324540db74836076a0b303
+            let win = q_window.single().unwrap();
             let win_length = win.size().x;
             let win_height = win.size().y;
             let enemy_direction = Vec3::new(
