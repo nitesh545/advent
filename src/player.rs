@@ -1,4 +1,4 @@
-//use avian2d::prelude::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -64,6 +64,7 @@ impl PlayerPlugin {
                     friction: 5.0,
                     fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
                 },
+                anim_config,
             ));
     }
 
