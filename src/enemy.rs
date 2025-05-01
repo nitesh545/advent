@@ -1,4 +1,4 @@
-//use avian2d::prelude::*;
+use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use rand::Rng;
@@ -6,7 +6,7 @@ use rand::Rng;
 use crate::components_and_resources::{AnimationConfig, Enemy, EnemySapwnTimer};
 
 pub struct EnemyPlugin;
-#[allow(unused_variables)]
+#[allow(unused_variables, clippy::too_many_arguments)]
 impl EnemyPlugin {
     pub fn spawn_enemies(
         mut commands: Commands,
@@ -48,6 +48,9 @@ impl EnemyPlugin {
                     //speed: 0.0,
                     enemy_rotation: rot,
                 },
+                RigidBody::Kinematic,
+                Collider::circle(100.0),
+                //Sensor,
             ));
         
         }

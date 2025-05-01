@@ -1,4 +1,6 @@
+use bevy::core_pipeline::bloom::{BloomCompositeMode, BloomPrefilter};
 use bevy::prelude::*;
+use bevy::text::cosmic_text::ttf_parser::colr::CompositeMode;
 use bevy::window::PrimaryWindow;
 use crate::adventui::setup_progress_bar;
 use crate::components_and_resources::{
@@ -10,7 +12,27 @@ use crate::components_and_resources::{
 pub struct GamePlugin;
 impl GamePlugin {
     pub fn setup_camera(mut commands: Commands) {
-        commands.spawn(Camera2d::default());
+        commands.spawn((
+                Camera2d::default(),
+                Camera {
+                    hdr: false,
+                    clear_color: ClearColorConfig::Custom(Color::BLACK),
+                    ..Default::default()
+                },
+                bevy::core_pipeline::bloom::Bloom {
+                    intensity: 0.15,
+                    low_frequency_boost: 0.315,
+                    low_frequency_boost_curvature: 0.475,
+                    high_pass_frequency: 0.52,
+                    prefilter: BloomPrefilter { threshold: 0.15, threshold_softness: 0.23 },
+                    composite_mode: BloomCompositeMode::Additive,
+                    //max_mip_dimension: 1000,
+                    //scale: Vec2::splat(10.0),
+                    ..Default::default()
+                },
+                bevy::core_pipeline::tonemapping::Tonemapping::AgX,
+                bevy::core_pipeline::tonemapping::DebandDither::Enabled,
+        ));
     }
 
     pub fn setup_space_station(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -167,7 +189,7 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, Self::setup_score)
             .add_systems(Startup, Self::setup_space_station)
             .add_systems(Startup, Self::setup_music)
-            .add_systems(Startup, setup_progress_bar)
+            //.add_systems(Startup, setup_progress_bar)
             //.add_systems(Update, reactivity)
             .add_systems(Update, Self::custom_cursor)
             .add_systems(Update, Self::update_score_text)

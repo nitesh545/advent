@@ -20,33 +20,6 @@ impl PlayerPlugin {
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
         let anim_config = AnimationConfig::new(0, 5, 60, String::from("once"));
 
-        // commands.spawn((
-        //     // Mesh2d(meshes.add(Circle::new(25.0))),
-        //     // Sprite::from_image(asset_server.load("tower.png")),
-        //     Sprite::from_atlas_image(
-        //         texture,
-        //         TextureAtlas {
-        //             layout: texture_atlas_layout,
-        //             index: anim_config.first_sprite_index,
-        //         },
-        //     ),
-        //     // Sprite::from_image(asset_server.load("tower2.png")),
-        //     Transform::from_scale(Vec3::splat(0.5)),
-        //     RigidBody::Kinematic,
-        //     Collider::circle(100.0),
-        //     Sensor,
-        //     // MeshMaterial2d(materials.add(Color::srgb(1.0, 0.0, 1.0))),
-        //     Player {
-        //         speed: 200.0,
-        //         acceleration: 500.0,
-        //         max_speed: 400.0,
-        //         velocity: Vec3::ZERO,
-        //         friction: 5.0,
-        //         fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
-        //     },
-        //     anim_config,
-        // ));
-
         commands
             .spawn((
                 Sprite::from_atlas_image(
@@ -65,6 +38,9 @@ impl PlayerPlugin {
                     fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
                 },
                 anim_config,
+                RigidBody::Kinematic,
+                Collider::circle(100.0),
+                //Sensor,
             ));
     }
 
@@ -168,6 +144,7 @@ impl PlayerPlugin {
         transform.rotation = Quat::from_rotation_z(angle);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn fire_bullet(
         mut commands: Commands,
         keyboard_input: Res<ButtonInput<KeyCode>>,
@@ -208,6 +185,9 @@ impl PlayerPlugin {
                             speed: 400.0,
                             direction: dir,
                         },
+                        RigidBody::Kinematic,
+                        Collider::circle(100.0),
+                        //Sensor,
                     ))
                     .id();
                 let bullet_fire_entity = commands
