@@ -20,28 +20,28 @@ impl PlayerPlugin {
         let texture_atlas_layout = texture_atlas_layouts.add(layout);
         let anim_config = AnimationConfig::new(0, 5, 60, String::from("once"));
 
-        commands
-            .spawn((
-                Sprite::from_atlas_image(
+        commands.spawn((
+            Sprite::from_atlas_image(
                 texture,
                 TextureAtlas {
                     layout: texture_atlas_layout,
                     index: anim_config.first_sprite_index,
-                }),
-                Transform::from_scale(Vec3::splat(0.5)),
-                Player {
-                    speed: 200.0,
-                    acceleration: 500.0,
-                    max_speed: 400.0,
-                    velocity: Vec3::ZERO,
-                    friction: 5.0,
-                    fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
                 },
-                anim_config,
-                RigidBody::Kinematic,
-                Collider::circle(100.0),
-                //Sensor,
-            ));
+            ),
+            Transform::from_scale(Vec3::splat(0.5)),
+            Player {
+                speed: 200.0,
+                acceleration: 500.0,
+                max_speed: 400.0,
+                velocity: Vec3::ZERO,
+                friction: 5.0,
+                fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
+            },
+            anim_config,
+            RigidBody::Kinematic,
+            Collider::circle(100.0),
+            //Sensor,
+        ));
     }
 
     #[allow(dead_code)]
@@ -64,13 +64,13 @@ impl PlayerPlugin {
                 input_direction += Vec3::Y;
             }
             if keyboard_input.pressed(KeyCode::KeyS)
-                && transform.translation.y > win.size().y * -1.0 / 2.0 + 100.0
+                && transform.translation.y > -win.size().y / 2.0 + 100.0
             {
                 // input_direction -= *transform.up();
                 input_direction -= Vec3::Y;
             }
             if keyboard_input.pressed(KeyCode::KeyA)
-                && transform.translation.x > win.size().x * -1.0 / 2.0 + 100.0
+                && transform.translation.x > -win.size().x / 2.0 + 100.0
             {
                 // input_direction -= *transform.right();
                 input_direction -= Vec3::X;

@@ -1,9 +1,11 @@
+use crate::components_and_resources::{
+    Accuracy, Bullet, Enemy, HitSoundBulletMeteor, Player, Score, Smoke, Wall,
+};
 use avian2d::collision::collider::contact_query::contact;
 use avian2d::prelude::*;
-use bevy::prelude::*;
 use bevy::audio::Volume;
+use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::components_and_resources::{Smoke, Wall, Player, HitSoundBulletMeteor, Accuracy, Bullet, Enemy, Score};
 
 pub fn debug_inputs(
     mut q_windows: Query<&mut Window, With<PrimaryWindow>>,
@@ -22,7 +24,7 @@ pub fn debug_inputs(
     }
 }
 
-#[allow(dead_code, unused_variables)]
+#[allow(dead_code, unused_variables, clippy::type_complexity)]
 pub fn collision_bullet_enemy(
     mut q_enemy: Query<(&mut Transform, &mut Enemy, Entity), (With<Enemy>, Without<Bullet>)>,
     mut q_bullet: Query<(&mut Transform, &mut Bullet, Entity), (With<Bullet>, Without<Enemy>)>,
@@ -77,9 +79,9 @@ pub fn collision_reader(
         {
             let ind = q_enemy
                 .iter()
-                .position(|(&x, ent)| ent == *entity1 || ent == *entity2)
+                .position(|(&_x, ent)| ent == *entity1 || ent == *entity2)
                 .unwrap();
-            let (&transform, ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
+            let (&_transform, _ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
             commands.entity(*entity2).despawn();
             commands.entity(*entity1).despawn();
             //let collided_at = manifolds[0].contacts[0].global_point1(

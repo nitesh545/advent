@@ -7,7 +7,7 @@ pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(PhysicsPlugins::default())
-        .add_plugins(PhysicsDebugPlugin::default())
+        //.add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
         .insert_resource(components_and_resources::EnemySapwnTimer(
             Timer::from_seconds(2.0, TimerMode::Repeating),

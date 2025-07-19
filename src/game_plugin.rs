@@ -1,11 +1,9 @@
-use bevy::core_pipeline::bloom::{BloomCompositeMode, BloomPrefilter};
-use bevy::prelude::*;
-use bevy::text::cosmic_text::ttf_parser::colr::CompositeMode;
-use bevy::window::PrimaryWindow;
-use crate::adventui::setup_progress_bar;
 use crate::components_and_resources::{
     Accuracy, Cursor, HitSoundBulletMeteor, Score, Smoke, SpaceStation,
 };
+use bevy::core_pipeline::bloom::{BloomCompositeMode, BloomPrefilter};
+use bevy::prelude::*;
+use bevy::window::PrimaryWindow;
 
 // all basic functionalities like background spawning, changing cursor and setting up camera is
 // handled in GamePlugin
@@ -13,25 +11,28 @@ pub struct GamePlugin;
 impl GamePlugin {
     pub fn setup_camera(mut commands: Commands) {
         commands.spawn((
-                Camera2d::default(),
-                Camera {
-                    hdr: false,
-                    clear_color: ClearColorConfig::Custom(Color::BLACK),
-                    ..Default::default()
+            Camera2d,
+            Camera {
+                hdr: false,
+                clear_color: ClearColorConfig::Custom(Color::BLACK),
+                ..Default::default()
+            },
+            bevy::core_pipeline::bloom::Bloom {
+                intensity: 0.15,
+                low_frequency_boost: 0.315,
+                low_frequency_boost_curvature: 0.475,
+                high_pass_frequency: 0.52,
+                prefilter: BloomPrefilter {
+                    threshold: 0.15,
+                    threshold_softness: 0.23,
                 },
-                bevy::core_pipeline::bloom::Bloom {
-                    intensity: 0.15,
-                    low_frequency_boost: 0.315,
-                    low_frequency_boost_curvature: 0.475,
-                    high_pass_frequency: 0.52,
-                    prefilter: BloomPrefilter { threshold: 0.15, threshold_softness: 0.23 },
-                    composite_mode: BloomCompositeMode::Additive,
-                    //max_mip_dimension: 1000,
-                    //scale: Vec2::splat(10.0),
-                    ..Default::default()
-                },
-                bevy::core_pipeline::tonemapping::Tonemapping::AgX,
-                bevy::core_pipeline::tonemapping::DebandDither::Enabled,
+                composite_mode: BloomCompositeMode::Additive,
+                //max_mip_dimension: 1000,
+                //scale: Vec2::splat(10.0),
+                ..Default::default()
+            },
+            bevy::core_pipeline::tonemapping::Tonemapping::AgX,
+            bevy::core_pipeline::tonemapping::DebandDither::Enabled,
         ));
     }
 

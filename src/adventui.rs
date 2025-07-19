@@ -185,7 +185,8 @@
 
 use bevy::prelude::*;
 
-pub fn setup_progress_bar(mut commands: Commands, asset_server: Res<AssetServer>) {
+#[allow(clippy::needless_update)]
+pub fn _setup_progress_bar(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands
         .spawn(Node {
             width: Val::Percent(50.),
@@ -194,7 +195,7 @@ pub fn setup_progress_bar(mut commands: Commands, asset_server: Res<AssetServer>
             align_items: AlignItems::Center,
             ..Default::default()
         })
-        .with_children( |parent| {
+        .with_children(|parent| {
             parent.spawn(ImageNode {
                 color: Color::srgb(255.0, 0.0, 0.0),
                 image: asset_server.load("SpaceBackground5.png"),

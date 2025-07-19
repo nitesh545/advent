@@ -36,8 +36,8 @@ impl EnemyPlugin {
             commands.spawn((
                 Sprite::from_image(asset_server.load("rock.png")),
                 Transform::from_xyz(
-                    rng.random_range(-1.0 * win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
-                    rng.random_range(-1.0 * win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
+                    rng.random_range(-win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
+                    rng.random_range(-win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
                     0.0,
                 )
                 .with_scale(scale),
@@ -52,7 +52,6 @@ impl EnemyPlugin {
                 Collider::circle(100.0),
                 //Sensor,
             ));
-        
         }
     }
 
@@ -65,12 +64,12 @@ impl EnemyPlugin {
         let time_step = time.delta_secs();
         for (mut transform, mut enemy) in query.iter_mut() {
             if transform.translation.x >= win.size().x / 2.0 - 25.0
-                || transform.translation.x <= win.size().x * -1.0 / 2.0 + 25.0
+                || transform.translation.x <= -win.size().x / 2.0 + 25.0
             {
                 enemy.direction.x *= -1.0;
             }
             if transform.translation.y >= win.size().y / 2.0 - 25.0
-                || transform.translation.y <= win.size().y * -1.0 / 2.0 + 25.0
+                || transform.translation.y <= -win.size().y / 2.0 + 25.0
             {
                 enemy.direction.y *= -1.0;
             }
@@ -113,8 +112,7 @@ impl EnemyPlugin {
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Update, Self::spawn_enemies)
+        app.add_systems(Update, Self::spawn_enemies)
             .add_systems(Update, Self::move_enemies)
             .add_systems(Update, Self::rotate_enemies);
     }
