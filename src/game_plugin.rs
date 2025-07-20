@@ -38,7 +38,7 @@ impl GamePlugin {
 
     pub fn setup_space_station(mut commands: Commands, asset_server: Res<AssetServer>) {
         commands.spawn((
-            Sprite::from_image(asset_server.load("spaceStation4.png")),
+            Sprite::from_image(asset_server.load("spaceStation5.png")),
             Transform::from_xyz(0.0, 0.0, -1.0).with_scale(Vec3::splat(0.1)),
             SpaceStation {
                 rotation_speed: 0.06,
@@ -56,8 +56,8 @@ impl GamePlugin {
 
     pub fn setup_background(asset_server: Res<AssetServer>, mut commands: Commands) {
         commands.spawn((
-            Sprite::from_image(asset_server.load("SpaceBackground1.png")),
-            Transform::from_xyz(0.0, 0.0, -5.0).with_scale(Vec3::splat(0.7)),
+            Sprite::from_image(asset_server.load("SpaceBackground2.png")),
+            Transform::from_xyz(0.0, 0.0, -5.0).with_scale(Vec3::splat(1.0)),
         ));
     }
 

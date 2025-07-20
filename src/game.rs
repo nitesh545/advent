@@ -1,18 +1,25 @@
 use avian2d::prelude::*;
 use bevy::prelude::*;
+use bevy::window::WindowMode;
 
 use crate::{components_and_resources, enemy, envtools, game_plugin, player};
 
 pub fn run() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }))
         .add_plugins(PhysicsPlugins::default())
         //.add_plugins(PhysicsDebugPlugin::default())
         .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
         .insert_resource(components_and_resources::EnemySapwnTimer(
             Timer::from_seconds(2.0, TimerMode::Repeating),
         ))
-        .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
+        //.add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
         .add_plugins(bevy::diagnostic::LogDiagnosticsPlugin::default())
         .insert_resource(components_and_resources::BulletFadeTimer(
             Timer::from_seconds(1.0, TimerMode::Repeating),

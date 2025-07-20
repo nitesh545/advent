@@ -1,0 +1,13 @@
+[assets]
+background = "SpaceBackground5.png"
+turret = "turret_5.png"
+turret_base = "spaceStation5.png"
+crosshair = "cursor.png"
+bgmusic = "space_music.ogg"
+bullet = "bullet.png"
+fire_sound_fx = "fire.ogg"
+meteor = "rock1.png"
+collision_smoke = "collision_smoke1.png"
+collision_sound = "explosion.ogg"
+
+[settings]

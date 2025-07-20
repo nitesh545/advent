@@ -1,9 +1,9 @@
-use crate::components_and_resources::{
-    Accuracy, Bullet, Enemy, HitSoundBulletMeteor, Player, Score, Smoke, Wall,
-};
+use std::path::PathBuf;
+
+use crate::components_and_resources::{Accuracy, Bullet, Enemy, Player, Score, Wall};
+use crate::utility;
 use avian2d::collision::collider::contact_query::contact;
 use avian2d::prelude::*;
-use bevy::audio::Volume;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -49,7 +49,7 @@ pub fn collision_bullet_enemy(
 
 #[allow(clippy::too_many_arguments)]
 pub fn collision_reader(
-    mut collision_events: EventReader<CollisionStarted>,
+    mut collision_events: EventReader<avian2d::prelude::CollisionStarted>,
     q_colliders: Query<(&Collider, &GlobalTransform)>,
     q_enemy: Query<(&Transform, Entity), With<Enemy>>,
     q_bullet: Query<Entity, With<Bullet>>,
@@ -63,7 +63,6 @@ pub fn collision_reader(
     let mut score = q_score.single_mut().unwrap();
     let mut accuracy = q_accuracy.single_mut().unwrap();
     for CollisionStarted(entity1, entity2) in collision_events.read() {
-        println!("collision happened");
         let (collider1, transform1) = match q_colliders.get(*entity1) {
             Ok(k) => k,
             Err(_) => continue,
@@ -81,7 +80,7 @@ pub fn collision_reader(
                 .iter()
                 .position(|(&_x, ent)| ent == *entity1 || ent == *entity2)
                 .unwrap();
-            let (&_transform, _ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
+            let (&transform, _ent) = q_enemy.iter().collect::<Vec<_>>()[ind];
             commands.entity(*entity2).despawn();
             commands.entity(*entity1).despawn();
             //let collided_at = manifolds[0].contacts[0].global_point1(
@@ -96,25 +95,27 @@ pub fn collision_reader(
                 Ok(k) => k,
                 Err(_) => continue,
             };
-            let collided_at = match collided_at {
+            let _collided_at = match collided_at {
                 Some(k) => k,
                 None => continue,
             };
-            commands.spawn((
-                Sprite::from_image(asset_server.load("collision_smoke1.png")),
-                Transform::from_xyz(collided_at.local_point1.x, collided_at.local_point1.y, 0.0)
-                    .with_scale(Vec3::splat(0.75)),
-                Smoke {
-                    duration: Timer::from_seconds(2.0, TimerMode::Once),
-                },
-            ));
-            commands.spawn((
-                AudioPlayer::new(asset_server.load("explosion.ogg")),
-                PlaybackSettings::ONCE.with_volume(Volume::Linear(5.0)),
-                HitSoundBulletMeteor {
-                    duration: Timer::from_seconds(2.0, TimerMode::Once),
-                },
-            ));
+
+            let trans = Transform::from_xyz(transform.translation.x, transform.translation.y, 0.0)
+                .with_scale(Vec3::splat(0.5));
+            let _smoke_sprite = utility::spawn_sprite(
+                &mut commands,
+                asset_server.clone(),
+                PathBuf::from("collision_smoke1.png"),
+                trans,
+            );
+
+            utility::spawn_audio(
+                &mut commands,
+                asset_server.clone(),
+                PathBuf::from("explosion.ogg"),
+                5.0,
+                2.0,
+            );
             score.score += 1;
             accuracy.bullets_hit += 1.0;
         }
@@ -123,6 +124,13 @@ pub fn collision_reader(
         if (q_enemy.contains(*entity1) && q_player.contains(*entity2))
             || (q_enemy.contains(*entity2) && q_player.contains(*entity1))
         {
+            let trans = Transform::from_xyz(0.0, 0.0, 0.0).with_scale(Vec3::splat(0.75));
+            utility::spawn_sprite(
+                &mut commands,
+                asset_server.clone(),
+                PathBuf::from("collision_smoke1.png"),
+                trans,
+            );
             println!("Game Over!");
         }
 

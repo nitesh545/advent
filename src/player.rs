@@ -13,22 +13,24 @@ impl PlayerPlugin {
         meshes: ResMut<Assets<Mesh>>,
         materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
-        mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+        //mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
     ) {
-        let texture = asset_server.load("turret2_fire_animation.png");
-        let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 3, 2, None, None);
-        let texture_atlas_layout = texture_atlas_layouts.add(layout);
+        //let texture = asset_server.load("turret2_fire_animation.png");
+        //let layout = TextureAtlasLayout::from_grid(UVec2::new(256, 256), 3, 2, None, None);
+        //DynamicSceneBuildert texture_atlas_layout = texture_atlas_layouts.add(layout);
+        let texture = asset_server.load("turret_5.png");
         let anim_config = AnimationConfig::new(0, 5, 60, String::from("once"));
 
         commands.spawn((
-            Sprite::from_atlas_image(
-                texture,
-                TextureAtlas {
-                    layout: texture_atlas_layout,
-                    index: anim_config.first_sprite_index,
-                },
-            ),
-            Transform::from_scale(Vec3::splat(0.5)),
+            //Sprite::from_atlas_image(
+            //    texture,
+            //    TextureAtlas {
+            //        layout: texture_atlas_layout,
+            //        index: anim_config.first_sprite_index,
+            //    },
+            //),
+            Sprite::from(texture),
+            Transform::from_scale(Vec3::splat(0.075)),
             Player {
                 speed: 200.0,
                 acceleration: 500.0,
@@ -40,6 +42,7 @@ impl PlayerPlugin {
             anim_config,
             RigidBody::Kinematic,
             Collider::circle(100.0),
+            CollisionEventsEnabled,
             //Sensor,
         ));
     }
@@ -187,6 +190,7 @@ impl PlayerPlugin {
                         },
                         RigidBody::Kinematic,
                         Collider::circle(100.0),
+                        CollisionEventsEnabled,
                         //Sensor,
                     ))
                     .id();
