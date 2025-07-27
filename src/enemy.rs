@@ -1,16 +1,18 @@
-use crate::config;
-use avian2d::prelude::*;
+use crate::config::Config;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use bevy_rapier2d::prelude::*;
 use rand::Rng;
 
-use crate::components_and_resources::{AnimationConfig, Enemy, EnemySapwnTimer};
+use crate::components_and_resources::{AnimationConfig, ConfigHandle, Enemy, EnemySapwnTimer};
 
 pub struct EnemyPlugin;
 #[allow(unused_variables, clippy::too_many_arguments)]
 impl EnemyPlugin {
     pub fn spawn_enemies(
         mut commands: Commands,
+        config_handle: Res<ConfigHandle>,
+        config_assets: Res<Assets<Config>>,
         meshes: ResMut<Assets<Mesh>>,
         materials: ResMut<Assets<ColorMaterial>>,
         asset_server: Res<AssetServer>,
@@ -19,8 +21,12 @@ impl EnemyPlugin {
         mut timer: ResMut<EnemySapwnTimer>,
         time: Res<Time>,
     ) {
-        // TODO: loads every time. Fix this by adding this to a resource.
-        let config = config::Config::load_config();
+        let config;
+        if let Some(cfg) = config_assets.get(&config_handle.0) {
+            config = cfg;
+        } else {
+            return;
+        }
         if timer.0.tick(time.delta()).just_finished() {
             let mut rng = rand::rng();
             let win = q_window.single().unwrap();
@@ -37,7 +43,7 @@ impl EnemyPlugin {
             let scale = Vec3::splat(rng.random_range(0.025..0.05));
 
             commands.spawn((
-                Sprite::from_image(asset_server.load(config.assets.meteor)),
+                Sprite::from_image(asset_server.load(config.assets.meteor.clone())),
                 Transform::from_xyz(
                     rng.random_range(-win_length / 2.0 + 50.0..win_length / 2.0 - 50.0),
                     rng.random_range(-win_height / 2.0 + 50.0..win_height / 2.0 - 50.0),
@@ -52,8 +58,11 @@ impl EnemyPlugin {
                     enemy_rotation: rot,
                 },
                 RigidBody::Dynamic,
-                Collider::circle(500.0),
-                CollisionEventsEnabled,
+                Collider::ball(500.0),
+                GravityScale(0.0),
+                Restitution::coefficient(1.0),
+                Friction::coefficient(0.20),
+                Ccd::enabled(),
                 //Sensor,
             ));
         }

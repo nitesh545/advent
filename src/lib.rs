@@ -1,4 +1,5 @@
 mod adventui;
+mod asset_loader;
 mod components_and_resources;
 mod config;
 mod enemy;

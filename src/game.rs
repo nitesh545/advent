@@ -1,7 +1,10 @@
-use avian2d::prelude::*;
 use bevy::prelude::*;
+#[allow(unused_imports)]
 use bevy::window::WindowMode;
+use bevy_rapier2d::prelude::*;
 
+use crate::asset_loader::ConfigLoader;
+use crate::config::Config;
 use crate::{components_and_resources, enemy, envtools, game_plugin, player};
 
 pub fn run() {
@@ -13,9 +16,9 @@ pub fn run() {
             }),
             ..Default::default()
         }))
-        .add_plugins(PhysicsPlugins::default())
-        //.add_plugins(PhysicsDebugPlugin::default())
-        .insert_resource(Gravity(Vec2::NEG_Y * 0.0))
+        //.add_plugins(DefaultPlugins)
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
+        .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(components_and_resources::EnemySapwnTimer(
             Timer::from_seconds(2.0, TimerMode::Repeating),
         ))
@@ -29,8 +32,14 @@ pub fn run() {
             player::PlayerPlugin,
             enemy::EnemyPlugin,
         ))
+        .init_asset::<Config>()
+        .init_asset_loader::<ConfigLoader>()
+        .add_systems(Startup, envtools::setup_config_file)
+        .add_systems(Update, envtools::handle_bullet_wall_collision)
+        .add_systems(Update, envtools::handle_player_enemy_collision)
+        .add_systems(Update, envtools::handle_bullet_enemy_collision)
         .add_systems(Startup, envtools::setup_bounds)
         .add_systems(Update, envtools::debug_inputs)
-        .add_systems(Update, envtools::collision_reader)
+        //.add_systems(Update, envtools::collision_reader)
         .run();
 }

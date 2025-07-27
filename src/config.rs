@@ -1,7 +1,9 @@
+use bevy::asset::Asset;
+use bevy::reflect::TypePath;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Asset, TypePath)]
 pub struct Config {
     pub assets: Assets,
     pub settings: Settings,
@@ -24,9 +26,10 @@ pub struct Assets {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {}
 
+#[allow(dead_code)]
 impl Config {
     pub fn load_config() -> Config {
-        let config_string = std::fs::read_to_string("config.toml").unwrap();
+        let config_string = std::fs::read_to_string(PathBuf::from("config.toml")).unwrap();
         let config: Config = toml::from_str(&config_string).unwrap();
         config
     }

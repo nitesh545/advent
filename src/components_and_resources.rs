@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use std::time::Duration;
 
+use crate::config::Config;
+
 #[derive(Component)]
 pub struct Wall;
 
@@ -105,3 +107,6 @@ pub struct Enemy {
 
 #[derive(Resource)]
 pub struct EnemySapwnTimer(pub Timer);
+
+#[derive(Resource)]
+pub struct ConfigHandle(pub Handle<Config>);

@@ -1,6 +1,6 @@
-use avian2d::prelude::*;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use bevy_rapier2d::prelude::*;
 
 use crate::components_and_resources::{Accuracy, AnimationConfig, Bullet, BulletFireSound, Player};
 
@@ -40,9 +40,8 @@ impl PlayerPlugin {
                 fire_delay: Timer::from_seconds(0.2, TimerMode::Once),
             },
             anim_config,
-            RigidBody::Kinematic,
-            Collider::circle(100.0),
-            CollisionEventsEnabled,
+            RigidBody::KinematicPositionBased,
+            Collider::ball(100.0),
             //Sensor,
         ));
     }
@@ -188,10 +187,9 @@ impl PlayerPlugin {
                             speed: 400.0,
                             direction: dir,
                         },
-                        RigidBody::Kinematic,
-                        Collider::circle(100.0),
-                        CollisionEventsEnabled,
-                        //Sensor,
+                        RigidBody::KinematicPositionBased,
+                        Collider::ball(100.0),
+                        // Sensor,
                     ))
                     .id();
                 let bullet_fire_entity = commands
